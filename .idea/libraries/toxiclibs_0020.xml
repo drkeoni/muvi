@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="toxiclibs-0020">
+    <CLASSES>
+      <root url="file://$USER_HOME$/projects/toxiclibs-0020/toxiclibscore/library" />
+      <root url="file://$USER_HOME$/projects/toxiclibs-0020/verletphysics/library" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="file://$USER_HOME$/projects/toxiclibs-0020/toxiclibscore/library" recursive="false" />
+    <jarDirectory url="file://$USER_HOME$/projects/toxiclibs-0020/verletphysics/library" recursive="false" />
+  </library>
+</component>

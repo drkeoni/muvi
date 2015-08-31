@@ -45,7 +45,7 @@ class HelloVideo2 extends PApplet {
     size(512, 700, P3D)
 
     physics = new VerletPhysics()
-    //physics.addBehavior(new GravityBehavior(new Vec3D(-0.0015f, 0.0001f, 0.0f)))
+    physics.addBehavior(new GravityBehavior(new Vec3D(-0.0015f, 0.0001f, 0.0f)))
 
     minim = new Minim(this)
 
@@ -124,6 +124,7 @@ class HelloVideo2 extends PApplet {
 
       {
         setWeight(1000.0f)
+        lock()
       }
 
       def attract( g:GraphParticle ) = {

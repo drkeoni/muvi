@@ -38,11 +38,14 @@ class HelloVideo2 extends PApplet {
   val DATA_PATH = new File(List(CLASS_PATH, "..", "..", "..", "data").mkString(File.separator)).getCanonicalPath
   def data(s: String) = DATA_PATH + File.separator + s
 
-  val SONG_FILE = data("02_Untitled.mp3")
+  //val SONG_FILE = data("02_Untitled.mp3")
+  val SONG_FILE = data("cello_suite_no_5_prelude.mp3")
   val BG_COLOR = color(105.0f,105.0f,95.0f)
 
+  var nextGraph:Boolean = false
+
   override def setup() {
-    size(512, 700, P3D)
+    size(512, 600, P3D)
 
     physics = new VerletPhysics()
     physics.addBehavior(new GravityBehavior(new Vec3D(-0.0015f, 0.0001f, 0.0f)))
@@ -73,17 +76,30 @@ class HelloVideo2 extends PApplet {
     physics.update()
     environment.update(millis() / 1000.0f, song)
     background(BG_COLOR)
+    if (nextGraph) {
+      graphLayout.cycle()
+      nextGraph = false
+    }
     graphLayout.display()
+  }
+
+  override def keyPressed(): Unit = {
+    if (key.toUpper=='N')
+      nextGraph = true
+    else
+      nextGraph = false
   }
 
   class GraphLayout( physics:VerletPhysics, n:Int, height:Int ) {
     val graphs = ArrayBuffer[BallGraph]()
     val RADIUS = 200.0
+    val TEMPERATURE = 0.02f
 
     def theta(i:Int) = 2.0 * Math.PI * (i.toDouble+0.25) / n.toDouble
     def yi(i:Int) = (RADIUS*Math.sin(theta(i))).toFloat + height/2
     def zi(i:Int) = (RADIUS*Math.cos(theta(i))).toFloat - 100.0f
 
+    val assignments = (0 until n).toArray
     val anchors = {
       val _a = for( i<-0 until n ) yield new AnchorPoint(new Vec3D(0.0f,yi(i),zi(i)),physics)
       _a.foreach( physics.addParticle(_) )
@@ -95,14 +111,16 @@ class HelloVideo2 extends PApplet {
       _a.toArray
     }
 
-    {
+    def applyAnchors() = {
       (0 until n).foreach( i => {
         val a = anchors(i)
-        val g = graphParticles(i)
+        val g = graphParticles(assignments(i))
         a.attract(g)
         //println( "Attaching (%f,%f,%f) to (%f,%f,%f)".format(a.x,a.y,a.z,g.x,g.y,g.z) )
       })
     }
+
+    applyAnchors()
 
     def add( i:Int, g:BallGraph ) = {
       graphs += g
@@ -115,8 +133,16 @@ class HelloVideo2 extends PApplet {
         val p = graphParticles(i)
         g.rectY = p.y.toInt
         g.rectZ = p.z.toInt
+        p.addVelocity( new Vec3D( 0.0f, TEMPERATURE*randomGaussian(), 0 ) )
       }
       graphs.foreach( _.display() )
+    }
+
+    def cycle() = {
+      val t = assignments(0)
+      ( 0 until n-1 ).foreach( i => { assignments(i)=assignments(i+1) } )
+      assignments(n-1) = t
+      applyAnchors()
     }
 
     class AnchorPoint( loc:Vec3D, physics:VerletPhysics ) extends VerletParticle(loc) {
@@ -129,28 +155,34 @@ class HelloVideo2 extends PApplet {
 
       def attract( g:GraphParticle ) = {
         if ( spring!=null ) physics.removeSpring(spring)
-        spring = new VerletSpring(this,g,0.0f,1.0e-4f)
+        spring = new VerletSpring(this,g,0.0f,3.0e-4f)
         spring.lockA(true)
         physics.addSpring(spring)
       }
     }
 
     class GraphParticle( loc:Vec3D ) extends VerletParticle(loc) {
-      setWeight(0.5f)
+      setWeight(2.5f)
     }
+  }
+
+  object BallGraph {
+    val LABEL_FONT_FAMILY = "Segoe UI Semibold"
+    val TITLE_FONT_FAMILY = "Segoe UI"
+    val LEFT_TEXT_MARGIN = 100
+    val STRETCH_BIG_TEXT_Y = 1.25f
   }
 
   class BallGraph( x:Int, y:Int, z:Int, width:Int, height:Int, title:String ) extends Agent {
 
-    val labelFont = createFont( "Segoe UI Semibold", 40, true )
-    val titleFont = createFont( "Segoe UI", 12, true )
+    val labelFont = createFont( BallGraph.LABEL_FONT_FAMILY, 40, true )
+    val titleFont = createFont( BallGraph.TITLE_FONT_FAMILY, 12, true )
     val balls = ArrayBuffer[SignalBall]()
     val levelAverage = new MovingAverageBuffer(50)
 
-    val LEFT_TEXT_MARGIN = 100
-    val rectWidth = width - LEFT_TEXT_MARGIN
+    val rectWidth = width - BallGraph.LEFT_TEXT_MARGIN
     val rectHeight = height
-    val rectX = x + LEFT_TEXT_MARGIN
+    val rectX = x + BallGraph.LEFT_TEXT_MARGIN
     //
     // mutable state
     //
@@ -159,8 +191,6 @@ class HelloVideo2 extends PApplet {
     var alphaFactor = 1.0f
     var label:String = null
     val ballPosition = new Vec3D(0,0,0)
-
-    val STRETCH_BIG_TEXT_Y = 1.25f
 
     def display() = {
       pushMatrix()
@@ -182,11 +212,11 @@ class HelloVideo2 extends PApplet {
       pushMatrix()
       //translate( 0, 0, rectZ )
       fill( 255, 255, 255 )
-      scale( 1.0f, STRETCH_BIG_TEXT_Y )
+      scale( 1.0f, BallGraph.STRETCH_BIG_TEXT_Y )
       textFont(labelFont)
       textSize(60)
       textAlign(LEFT,CENTER)
-      text( label, rectX-85, (rectY+rectHeight/2)/STRETCH_BIG_TEXT_Y )
+      text( label, rectX-85, (rectY+rectHeight/2)/BallGraph.STRETCH_BIG_TEXT_Y )
       popMatrix()
       // green ball
       fill( 200, 235, 200, 128 )
@@ -219,7 +249,7 @@ class HelloVideo2 extends PApplet {
       val (l,vy) = getSignal(time,signals,events)
       ballPosition.x = rectX + rectWidth - 16
       ballPosition.y = rectY + rectHeight - 10 - limiter(vy,0,rectHeight-10)
-      val b = new SignalBall(ballPosition,new Vec3D(-0.8f,0,0))
+      val b = new SignalBall(ballPosition,new Vec3D(-0.8f,0,0),color(255,255,255-2*ballPosition.y))
       balls += b
       physics.addParticle(b)
     }
@@ -234,7 +264,7 @@ class HelloVideo2 extends PApplet {
 
     def getRawSignal(time: Float, signals: Map[String, Array[Float]], events: Map[String, VideoEvent]): Float = 0.0f
 
-    class SignalBall(loc:Vec3D, vel:Vec3D) extends VerletParticle(loc) {
+    class SignalBall(loc:Vec3D, vel:Vec3D, val color:Int) extends VerletParticle(loc) {
       val radius=4
 
       {
@@ -246,7 +276,7 @@ class HelloVideo2 extends PApplet {
       def display() = {
         val f = (x-rectX).toFloat / rectWidth.toFloat
         val alpha = (f*f*0.8f + 0.2f)*255.0f
-        fill(240,240,240,alpha)
+        fill(color,alpha)
         noStroke()
         ellipse(x,y,4,4)
       }

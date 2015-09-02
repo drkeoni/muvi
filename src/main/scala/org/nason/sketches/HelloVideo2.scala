@@ -3,7 +3,7 @@ package org.nason.sketches
 import java.io.File
 
 import ddf.minim.{AudioPlayer, Minim}
-import org.nason.model.{MovingAverageBuffer, VideoEvent, Agent, MusicVideoSystem}
+import org.nason.model.{MovingAverageBuffer, Agent, VideoEvent, MusicVideoSystem}
 import processing.core.{PFont, PApplet}
 import processing.core.PConstants._
 import toxi.geom.{Vec3D, Rect, Vec2D}

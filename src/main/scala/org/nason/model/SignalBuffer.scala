@@ -1,11 +1,12 @@
 package org.nason.model
 
 /**
- * Created by Jon on 8/23/2015.
+ * Implements a circular buffer with fixed size.
  */
 class SignalBuffer( n:Int ) {
 
   val signals = Array.fill(n)(0.0f)
+  /** private state locating the start in the circular buffer */
   private var i:Int = 0
 
   def add( v:Float ) : Float = {

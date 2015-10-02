@@ -22,10 +22,16 @@ class MusicVideoSystem(song:AudioPlayer) {
     _f
   }
 
+  /** logarithmically spaced frequency bands */
   val bands = {
     val delta = Math.log(fft.specSize())/MusicVideoSystem.TARGET_NUM_BANDS.toFloat
     for( i <- 0.0 to Math.log(fft.specSize) by delta )
       yield Math.exp(i).toInt
+  }
+
+  val mfccCalculator = {
+    System.err.println("Initializing MfccCalculator(%f,%f,%d,%d,%f)".format(20.0f, 10000.0f, 26, fft.specSize(), song.sampleRate()))
+    new MfccCalculator( 20.0f, 10000.0f, 26, fft.specSize(), song.sampleRate() )
   }
 
   def register(agent:Agent) = agents.append(agent)
@@ -34,12 +40,14 @@ class MusicVideoSystem(song:AudioPlayer) {
     fft.forward(song.mix)
     val spectrum = {for(b<-bands) yield fft.getBand(b)}.toArray
 
+    /** convert single float to an Array[Float] */
     def s2a(f:Float) = Seq(f).toArray
 
     val signals = Seq(
       ("spectrum",spectrum),
       ("level",s2a(song.mix.level())),
-      ("numBands",s2a(bands.length))
+      ("numBands",s2a(bands.length)),
+      ("mfcc",mfccCalculator.calculateCoefficients(fft))
     ).toMap
 
     val events = Map[String,VideoEvent]()

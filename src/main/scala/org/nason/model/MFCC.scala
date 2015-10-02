@@ -60,13 +60,18 @@ class MfccCalculator( minFreq:Float, maxFreq:Float, n:Int, nfft:Int, sampleRate:
     y.toArray
   }
 
-  def calculateCoefficients( fft:FFT ) = {
+  def calculateCoefficients( spectrum:IndexedSeq[Float] ) : Array[Float] = {
     // the FFT spectrum is absolute, not squared, so square it to get power
-    val s = (0 until nfft).map(fft.getBand).map(x=>x*x)
+    val s = spectrum.map(x=>x*x)
     val p = calculateMelLogPower(s)
     // take DCT
-    val coeffs = (0 until n).map( k => (0 until n).map( i => p(i) * cosWeights(i)(k) ).sum )
-    coeffs
+    val coeffs = (0 until n).map( k => (0 until n).map( i => p(i) * cosWeights(i)(k) ).sum.toFloat )
+    coeffs.toArray
+  }
+
+  def calculateCoefficients( fft:FFT ) : Array[Float] = {
+    val s = (0 until nfft).map(fft.getBand)
+    calculateCoefficients(s)
   }
 
   /** Applies Mel filterbanks to the power spectrum and returns the energy in each filter bank. */

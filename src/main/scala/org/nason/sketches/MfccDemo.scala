@@ -1,11 +1,9 @@
 package org.nason.sketches
 
-import java.io.File
-
 import ddf.minim.{AudioPlayer, Minim}
-import org.nason.model.{MovingAverageBuffer, VideoEvent, Agent, MusicVideoSystem}
+import org.nason.model.{MovingAverageBuffer, VideoEvent, Agent, MusicVideoSystem, MusicVideoApplet}
 import processing.core.PConstants._
-import processing.core.{PFont, PApplet}
+import processing.core.PApplet
 import toxi.geom.Vec3D
 import toxi.physics.{VerletParticle, VerletPhysics}
 import toxi.physics.behaviors.GravityBehavior
@@ -19,21 +17,15 @@ object MfccDemo {
   def main(args: Array[String]) = PApplet.main(Array[String]("MfccDemo","--full-screen","--external"))
 }
 
-class MfccDemo extends PApplet {
+class MfccDemo extends MusicVideoApplet {
   // Have to create a lot of vars because these need to be shared between methods
   // and processing using a deferred instantiation model
-  var physics: VerletPhysics = null
-  var environment: MusicVideoSystem = null
-  var minim: Minim = null
-  var song: AudioPlayer = null
+  var physics:VerletPhysics = null
+  var minim:Minim = null
+  var song:AudioPlayer = null
   var graph:MfccGraph = null
 
-  val CLASS_PATH:String = HelloVideo2.getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-  val DATA_PATH = new File(List(CLASS_PATH, "..", "..", "..", "data").mkString(File.separator)).getCanonicalPath
-  def data(s: String) = DATA_PATH + File.separator + s
-
-  val SONG_FILE = data("02_Untitled.mp3")
-  //val SONG_FILE = data("cello_suite_no_5_prelude.mp3")
+  val SONG_FILE = songFiles("02")
   val BG_COLOR = color(105.0f,105.0f,95.0f)
 
   override def setup() {

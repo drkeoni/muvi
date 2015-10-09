@@ -60,6 +60,10 @@ class MfccCalculator( minFreq:Float, maxFreq:Float, n:Int, nfft:Int, sampleRate:
     y.toArray
   }
 
+  /**
+   * @param spectrum FFT spectrum (absolute, not power spectrum).  Sequence of nfft Floats
+   * @return array of MFCC coefficients for this FFT spectrum (absolute, not power spectrum)
+   */
   def calculateCoefficients( spectrum:IndexedSeq[Float] ) : Array[Float] = {
     // the FFT spectrum is absolute, not squared, so square it to get power
     val s = spectrum.map(x=>x*x)

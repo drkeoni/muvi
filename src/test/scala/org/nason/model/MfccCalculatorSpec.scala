@@ -1,5 +1,6 @@
 package org.nason.model
 
+import ddf.minim.analysis.{HammingWindow, FFT}
 import org.scalatest.{Matchers, FlatSpec}
 
 /**
@@ -17,7 +18,23 @@ class MfccCalculatorSpec extends FlatSpec with Matchers {
   it should "have a low-frequency filterbank" in {
     val f = c.filterbank(0)
     f should have length (512)
-    f.foreach( println )
+  }
+
+  it should "calculate coefficients for a sine wave" in {
+    val freq = 25.0
+    val audio = (0 until 512).map( x => Math.sin(2.0*Math.PI*freq*(x/512.0)) ).map( _.toFloat ).toArray
+    val fft = new FFT(512,44100.0f)
+
+    fft.window(new HammingWindow())
+    fft.forward(audio)
+
+    val s = (0 until 512).map(fft.getBand)
+    val sMax = s.max
+    val iMax = s.indexWhere( x => x==sMax )
+    iMax should be (freq.toInt)
+
+    val coeff = c.calculateCoefficients(fft)
+    coeff should have length (10)
   }
 
 }

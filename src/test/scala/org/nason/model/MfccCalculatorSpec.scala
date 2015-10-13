@@ -3,6 +3,8 @@ package org.nason.model
 import ddf.minim.analysis.{HammingWindow, FFT}
 import org.scalatest.{Matchers, FlatSpec}
 
+import org.nason.util.Core.{time,mean,std}
+
 /**
  * Created by Jon on 9/30/2015.
  */
@@ -37,4 +39,32 @@ class MfccCalculatorSpec extends FlatSpec with Matchers {
     coeff should have length (10)
   }
 
+}
+
+class MfccCalculatorPerformanceSpec extends FlatSpec with Matchers {
+
+  val c = new MfccCalculator(300.0f,8000.0f,26,512,44100.0f)
+
+  "A MfccCalculator" should "calculate coefficients quickly" in {
+    val freq = 25.0
+    val audio = (0 until 512).map( x => Math.sin(2.0*Math.PI*freq*(x/512.0)) ).map( _.toFloat ).toArray
+    val fft = new FFT(512,44100.0f)
+
+    fft.window(new HammingWindow())
+    fft.forward(audio)
+
+    val timings = for( i <- 0 to 15 ) yield {
+      val timing = time {
+        val coeff = c.calculateCoefficients(fft)
+        coeff should have length (26)
+      }
+      timing._2
+    }
+
+    val lastTimings = timings.takeRight(10)
+    val mu = mean(lastTimings)/1000.0
+    val sigma = std(lastTimings)/1000.0
+
+    System.err.println("Took %f microseconds (std=%f)".format(mu,sigma))
+  }
 }

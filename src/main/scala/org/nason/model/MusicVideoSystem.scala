@@ -1,5 +1,6 @@
 package org.nason.model
 
+import com.typesafe.scalalogging.LazyLogging
 import ddf.minim.analysis.{HammingWindow, WindowFunction, FFT}
 
 import scala.collection.mutable.ListBuffer
@@ -13,7 +14,7 @@ object MusicVideoSystem {
 /**
  * Created by Jon on 8/19/2015.
  */
-class MusicVideoSystem(song:AudioPlayer) {
+class MusicVideoSystem(song:AudioPlayer) extends LazyLogging {
   val agents = ListBuffer[Agent]()
   val fftWindow : WindowFunction = new HammingWindow()
   val fft = {
@@ -30,7 +31,7 @@ class MusicVideoSystem(song:AudioPlayer) {
   }
 
   val mfccCalculator = {
-    System.err.println("Initializing MfccCalculator(%f,%f,%d,%d,%f)".format(20.0f, 10000.0f, 26, fft.specSize(), song.sampleRate()))
+    logger.info("Initializing MfccCalculator(%f,%f,%d,%d,%f)".format(20.0f, 10000.0f, 26, fft.specSize(), song.sampleRate()))
     new MfccCalculator( 20.0f, 10000.0f, 26, fft.specSize(), song.sampleRate() )
   }
 

@@ -65,7 +65,6 @@ class MfccDemo extends MusicVideoApplet {
 
   class MfccGraph( x:Int, y:Int, width:Int, height:Int, title:String ) extends Agent {
 
-    val labelFont = createFont( MfccGraph.LABEL_FONT_FAMILY, 40, true )
     val titleFont = createFont( MfccGraph.TITLE_FONT_FAMILY, 12, true )
     val balls = ArrayBuffer[SignalBall]()
     val levelAverage = new MovingAverageBuffer(50)
@@ -127,14 +126,14 @@ class MfccDemo extends MusicVideoApplet {
     private def limiter( s:Int, min:Int, max:Int ) : Int = {
       val x = ( s - min ).toDouble / ( max - min ).toDouble
       val y = 1.0 - Math.exp(-x)
-      ( min + (max-min)*y ).toInt
+      ( min + (max-min)*{if (y<0.0) 0.0 else y} ).toInt
     }
 
     override def processEnvironment(time: Float, signals: Map[String, Array[Float]], events: Map[String, VideoEvent]): Unit = {
       val mfcc = signals("mfcc")
 
       (2 to 13).foreach( i => {
-        val vy = mfcc(i).toInt * 50 + 50
+        val vy = mfcc(i).toInt * 15 + 25
         val pos = new Vec3D( rectX + rectWidth - 16, rectY + rectHeight - 10 - limiter(vy,0,rectHeight-10), 0.0f )
         val col = COLOR_BREWER(i-2)
         val b = new SignalBall(pos,new Vec3D(-0.8f,0,0),color(col._1,col._2,col._3))

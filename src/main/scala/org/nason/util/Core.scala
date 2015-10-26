@@ -19,11 +19,21 @@ object Core {
     ( result, t1-t0 )
   }
 
+  /**
+   * Returns arithmetic mean for the supplied sequence.
+   * @param x
+   * @return arithmetic mean
+   */
   def mean(x:Seq[Long]):Double = x.length match {
     case 0 => 0.0
     case _ => x.map(_.toDouble).sum / x.length
   }
 
+  /**
+   * Returns standard deviation for the supplied sequence.
+   * @param x
+   * @return standard deviation
+   */
   def std(x:Seq[Long]):Double = x.length match {
     case 0 => 0.0
     case _ => {

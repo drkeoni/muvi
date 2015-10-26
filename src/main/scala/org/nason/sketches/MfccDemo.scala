@@ -122,6 +122,10 @@ class MfccDemo extends MusicVideoApplet {
 
     /**
      * Takes a signal and a desired min,max range and returns a capped signal smaller than max
+     * @param s input signal
+     * @param min minimum
+     * @param max maximum
+     * @return compressed signal
      */
     private def limiter( s:Int, min:Int, max:Int ) : Int = {
       val x = ( s - min ).toDouble / ( max - min ).toDouble

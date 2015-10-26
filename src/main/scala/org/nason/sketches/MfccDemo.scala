@@ -51,7 +51,7 @@ class MfccDemo extends MusicVideoApplet {
 
   override def draw() {
     physics.update()
-    environment.update(millis() / 1000.0f, song)
+    environment.update(millis() / 1000.0f)
     background(BG_COLOR)
     graph.display()
   }

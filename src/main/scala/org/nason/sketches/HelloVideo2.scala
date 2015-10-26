@@ -74,7 +74,7 @@ class HelloVideo2 extends PApplet {
 
   override def draw() {
     physics.update()
-    environment.update(millis() / 1000.0f, song)
+    environment.update(millis() / 1000.0f)
     background(BG_COLOR)
     if (nextGraph) {
       graphLayout.cycle()

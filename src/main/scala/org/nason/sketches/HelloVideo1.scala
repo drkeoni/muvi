@@ -86,7 +86,7 @@ class HelloVideo1 extends PApplet {
 
   override def draw() {
     physics.update()
-    environment.update(millis()/1000.0f,song)
+    environment.update(millis()/1000.0f)
 
     background(255,230,230)
 

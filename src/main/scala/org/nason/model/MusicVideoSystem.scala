@@ -37,7 +37,18 @@ class MusicVideoSystem(song:AudioPlayer) extends LazyLogging {
 
   def register(agent:Agent) = agents.append(agent)
 
-  def update(time:Float, song:AudioPlayer) = {
+  /**
+   * Should be called once for each pass through the inner loop of the
+   * processing applet.
+   *
+   * For example: <pre>environment.update(millis() / 1000.0f)</pre>
+   *
+   * Calculates music feature signals for the current time slice
+   * and passes this information to each registered agent.
+   *
+   * @param time time in seconds
+   */
+  def update(time:Float) = {
     fft.forward(song.mix)
     val spectrum = {for(b<-bands) yield fft.getBand(b)}.toArray
 

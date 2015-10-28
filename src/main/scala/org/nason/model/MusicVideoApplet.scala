@@ -21,7 +21,8 @@ class MusicVideoApplet extends PApplet with LazyLogging {
 
   val songFiles = Seq( "01" -> "01_Sielvar.mp3",
                        "02" -> "02_Untitled.mp3",
-                       "cello" -> "cello_suite_no_5_prelude.mp3" )
+                       "cello" -> "cello_suite_no_5_prelude.mp3",
+                       "150" -> "expt_150_mixdown_c.mp3" )
     .map( x => (x._1,data(x._2)) )
     .toMap
 

@@ -10,6 +10,8 @@ import toxi.geom.Vec3D
 import toxi.physics.behaviors.AttractionBehavior
 import toxi.physics.{VerletParticle, VerletPhysics}
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
  * Created by Jon on 10/26/2015.
  */
@@ -38,15 +40,20 @@ class VinylSketch extends MusicVideoApplet {
   var pen:Pen = null
   var blurShader:PShader = null
   var blurTime:Int = 0
+  val pens = new ArrayBuffer[Pen]()
 
-  val SONG_FILE = songFiles("01")
+  val SONG_FILE = songFiles("cello")
   val BG_COLOR = color(125.0f,125.0f,105.0f)
-  val BLUR_TIME = 700
+  val DEFAULT_RADIUS = 60.0f
+  val BLUR_TIME = 1000
+  val SPAWN_PROB = 0.02f
+  val SPAWN_LIFETIME = 2500
+  val SPAWN_RADIUS = 20.0f
   val VELOCITY0 = new Vec3D(0.35f,0.0f,0.0f)
   val ATTRACTOR_STRENGTH = 0.14f
 
   override def setup() {
-    val w = 750
+    val w = 900
     val h = w
     size(h,w,P3D)
 
@@ -56,9 +63,11 @@ class VinylSketch extends MusicVideoApplet {
 
     minim = new Minim(this)
     song = minim.loadFile(SONG_FILE, 1024)
-    song.loop()
+    song.play(0)
+    //song.loop()
 
-    pen = new Pen(new Vec3D(w/2,5,0), VELOCITY0)
+    pen = new Pen(new Vec3D(w/2,5,0), VELOCITY0, DEFAULT_RADIUS, -1)
+    pens += pen
     physics.addParticle(pen)
     pen.setAttractor(new Vec3D(w/2,h/2,0), w/2*2.5f, ATTRACTOR_STRENGTH)
 
@@ -71,7 +80,20 @@ class VinylSketch extends MusicVideoApplet {
     environment.update(millis() / 1000.0f)
     //background(BG_COLOR)
     ambientLight( 255.0f, 255.0f, 255.0f, width/4, height/4, 5 )
-    pen.display()
+    pens.foreach( _.display() )
+
+    //camera(width/2.0f, height/2.0f, (height/2.0f) / Math.tan(PI*30.0 / 180.0).toFloat,pen.x,pen.y,pen.z,0f,1f,0f)
+    //camera(width/2.0f, height/2.0f, (height/2.0f) / Math.tan(PI*30.0 / 180.0).toFloat, width/2.0, height/2.0, 0.0f, 0.0f, 1.0f, 0.0f)
+
+    if ( random(0.0f,1.0f)<=SPAWN_PROB ) {
+      val loc = new Vec3D(pen.x,pen.y,pen.z)
+      val (vx,vy) = (randomGaussian(),randomGaussian())
+      val pen0 = new Pen(loc,new Vec3D(vx,vy,-0.1f),SPAWN_RADIUS,SPAWN_LIFETIME)
+      pens += pen0
+      physics.addParticle(pen0)
+      pen0.setAttractor(loc,width/5,ATTRACTOR_STRENGTH/10.0f)
+      environment.register(pen0)
+    }
 
     blurTime += 1
     if ( blurTime==BLUR_TIME ) {
@@ -79,21 +101,34 @@ class VinylSketch extends MusicVideoApplet {
       blurTime = 0
     }
 
+    cull()
+
     logger.info("Frame rate = %.2f fps".format(frameRate))
   }
+
+  private def cull(): Unit =
+    for( i <- pens.length-1 to 0 by -1 ) {
+      val p = pens(i)
+      if (p.isDead) {
+        pens.remove(i)
+        physics.removeParticle(p)
+        environment.unregister(p)
+      }
+    }
 
   object Pen {
     val COLOR=color(255.0f,255.0f,255.0f)
     val RADIUS=3.0f
-    val VELOCITY_DISSIPATION=0.99994f
-    val TEMPERATURE=0.01f
+    val VELOCITY_DISSIPATION=0.9998f
+    val TEMPERATURE=0.025f
     val PALETTE="diverging2"
   }
 
-  class Pen(loc:Vec3D, vel:Vec3D) extends VerletParticle(loc) with Agent {
+  class Pen(loc:Vec3D, vel:Vec3D, val radiusFactor:Float, val lifeSpan:Int) extends VerletParticle(loc) with Agent {
 
     var penColor = Pen.COLOR
     var radius = Pen.RADIUS
+    var age = 0
 
     {
       addVelocity(vel)
@@ -114,17 +149,25 @@ class VinylSketch extends MusicVideoApplet {
       //logger.info( "pen at r=(%f,%f,%f) v=(%f,%f,%f)".format(this.x,this.y,this.z,v.x,v.y,v.z) )
     }
 
+    def isDead = lifeSpan > 0 && age >= lifeSpan
+
+    def avg(x:Int,y:Int) = (x+y)/2
+
     override def processEnvironment(time: Float, signals: Map[String, Array[Float]], events: Map[String, VideoEvent]): Unit = {
       val mfcc = signals("mfcc").slice(2,13)
-      val smax = mfcc.max
-      val col = palette( Pen.PALETTE, mfcc.indexWhere( s => s==smax ) )
-      penColor = color(col._1,col._2,col._3)
-
+      //val smax = mfcc.max
+      val mfccs = mfcc.sorted
+      val m0 = mfccs(mfccs.length-1)
+      val m1 = mfccs(mfccs.length-2)
+      val col0 = palette( Pen.PALETTE, mfcc.indexWhere( s => s==m0 ) )
+      val col1 = palette( Pen.PALETTE, mfcc.indexWhere( s => s==m1 ) )
+      penColor = color( avg(col0._1,col1._1), avg(col0._2,col1._2), avg(col0._3,col1._3) )
       //logger.info("level = %f".format(signals("level")(0)))
-      radius = 35.0f * signals("level")(0)
+      radius = radiusFactor * signals("level")(0)
       addVelocity(new Vec3D(Pen.TEMPERATURE*randomGaussian(),
                             Pen.TEMPERATURE*randomGaussian(),
                             Pen.TEMPERATURE*randomGaussian()))
+      age += 1
     }
   }
 }

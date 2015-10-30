@@ -40,22 +40,24 @@ class VinylSketch extends MusicVideoApplet {
   var pen:Pen = null
   var blurShader:PShader = null
   var blurTime:Int = 0
+  var drawBackground:Boolean = true
   val pens = new ArrayBuffer[Pen]()
 
   val SONG_FILE = songFiles("cello")
-  val BG_COLOR = color(125.0f,125.0f,105.0f)
-  val DEFAULT_RADIUS = 60.0f
+  //val BG_COLOR = color(125.0f,125.0f,105.0f)
+  val BG_COLOR = color(255f,255f,255f)
+  val DEFAULT_RADIUS = 55.0f
   val BLUR_TIME = 1000
   val SPAWN_PROB = 0.02f
-  val SPAWN_LIFETIME = 2500
-  val SPAWN_RADIUS = 20.0f
-  val VELOCITY0 = new Vec3D(0.35f,0.0f,0.0f)
+  val SPAWN_LIFETIME = 3500
+  val SPAWN_RADIUS = 25.0f
+  val VELOCITY0 = new Vec3D(0.35f,0.0f,1.0f)
   val ATTRACTOR_STRENGTH = 0.14f
 
   override def setup() {
-    val w = 900
-    val h = w
-    size(h,w,P3D)
+    //val w = 1400
+    //val h = 1000
+    size(1700,950,P3D)
 
     blurShader = loadShader(data("blur.glsl"))
 
@@ -66,10 +68,10 @@ class VinylSketch extends MusicVideoApplet {
     song.play(0)
     //song.loop()
 
-    pen = new Pen(new Vec3D(w/2,5,0), VELOCITY0, DEFAULT_RADIUS, -1)
+    pen = new Pen(new Vec3D(width/2,5,0), VELOCITY0, DEFAULT_RADIUS, -1, Pen.PALETTE)
     pens += pen
     physics.addParticle(pen)
-    pen.setAttractor(new Vec3D(w/2,h/2,0), w/2*2.5f, ATTRACTOR_STRENGTH)
+    pen.setAttractor(new Vec3D(width/2,height/2,0), width/2*2.5f, ATTRACTOR_STRENGTH)
 
     environment = new MusicVideoSystem(song)
     environment.register(pen)
@@ -78,7 +80,11 @@ class VinylSketch extends MusicVideoApplet {
   override def draw() {
     physics.update()
     environment.update(millis() / 1000.0f)
-    //background(BG_COLOR)
+    if (drawBackground) {
+      background(BG_COLOR)
+      drawBackground = false
+    }
+
     ambientLight( 255.0f, 255.0f, 255.0f, width/4, height/4, 5 )
     pens.foreach( _.display() )
 
@@ -88,7 +94,7 @@ class VinylSketch extends MusicVideoApplet {
     if ( random(0.0f,1.0f)<=SPAWN_PROB ) {
       val loc = new Vec3D(pen.x,pen.y,pen.z)
       val (vx,vy) = (randomGaussian(),randomGaussian())
-      val pen0 = new Pen(loc,new Vec3D(vx,vy,-0.1f),SPAWN_RADIUS,SPAWN_LIFETIME)
+      val pen0 = new Pen(loc,new Vec3D(vx,vy,-0.1f),SPAWN_RADIUS,SPAWN_LIFETIME,"paired")
       pens += pen0
       physics.addParticle(pen0)
       pen0.setAttractor(loc,width/5,ATTRACTOR_STRENGTH/10.0f)
@@ -119,12 +125,12 @@ class VinylSketch extends MusicVideoApplet {
   object Pen {
     val COLOR=color(255.0f,255.0f,255.0f)
     val RADIUS=3.0f
-    val VELOCITY_DISSIPATION=0.9998f
+    val VELOCITY_DISSIPATION=0.99996f
     val TEMPERATURE=0.025f
     val PALETTE="diverging2"
   }
 
-  class Pen(loc:Vec3D, vel:Vec3D, val radiusFactor:Float, val lifeSpan:Int) extends VerletParticle(loc) with Agent {
+  class Pen(loc:Vec3D, vel:Vec3D, val radiusFactor:Float, val lifeSpan:Int, val penPalette:String) extends VerletParticle(loc) with Agent {
 
     var penColor = Pen.COLOR
     var radius = Pen.RADIUS
@@ -142,7 +148,9 @@ class VinylSketch extends MusicVideoApplet {
       lights()
       ambient(penColor)
       translate(this.x,this.y,this.z)
-      sphere(radius)
+      //sphere(radius)
+      box(radius)
+
       popMatrix()
       scaleVelocity(Pen.VELOCITY_DISSIPATION)
       //val v = this.getVelocity
@@ -159,8 +167,8 @@ class VinylSketch extends MusicVideoApplet {
       val mfccs = mfcc.sorted
       val m0 = mfccs(mfccs.length-1)
       val m1 = mfccs(mfccs.length-2)
-      val col0 = palette( Pen.PALETTE, mfcc.indexWhere( s => s==m0 ) )
-      val col1 = palette( Pen.PALETTE, mfcc.indexWhere( s => s==m1 ) )
+      val col0 = palette( penPalette, mfcc.indexWhere( s => s==m0 ) )
+      val col1 = palette( penPalette, mfcc.indexWhere( s => s==m1 ) )
       penColor = color( avg(col0._1,col1._1), avg(col0._2,col1._2), avg(col0._3,col1._3) )
       //logger.info("level = %f".format(signals("level")(0)))
       radius = radiusFactor * signals("level")(0)

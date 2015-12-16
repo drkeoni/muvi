@@ -1,5 +1,6 @@
 package org.nason.sketches
 
+import com.typesafe.config.ConfigFactory
 import ddf.minim.{AudioPlayer, Minim}
 import org.nason.model.{VideoEvent, Agent, MusicVideoSystem, MusicVideoApplet}
 import org.nason.util.Color.palette
@@ -34,6 +35,9 @@ object VinylSketch {
  * Progressive blurring during the drawing is applied to create a depth-of-focus effect.
  */
 class VinylSketch extends MusicVideoApplet {
+  val config = ConfigFactory.parseFile(configFile("sketch1.conf"))
+  def confFloat(s:String) = config.getDouble(s).toFloat
+
   var physics:VerletPhysics = null
   var minim:Minim = null
   var song:AudioPlayer = null
@@ -43,30 +47,28 @@ class VinylSketch extends MusicVideoApplet {
   var drawBackground:Boolean = true
   val pens = new ArrayBuffer[Pen]()
 
-  val SONG_FILE = songFiles("cello")
-  //val BG_COLOR = color(125.0f,125.0f,105.0f)
-  val BG_COLOR = color(255f,255f,255f)
-  val DEFAULT_RADIUS = 55.0f
-  val BLUR_TIME = 1000
-  val SPAWN_PROB = 0.02f
-  val SPAWN_LIFETIME = 3500
-  val SPAWN_RADIUS = 25.0f
-  val VELOCITY0 = new Vec3D(0.35f,0.0f,1.0f)
-  val ATTRACTOR_STRENGTH = 0.14f
+  val SONG_FILE = songFiles(config.getString("song.name"))
+  val BG_COLOR = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
+  val BLUR_TIME = config.getInt("sketch.blurTime")
+  val DEFAULT_RADIUS = confFloat("pen.radiusFactor")
+  val SPAWN_PROB = confFloat("pen.spawn.prob")
+  val SPAWN_LIFETIME = config.getInt("pen.spawn.lifetime")
+  val SPAWN_RADIUS = confFloat("pen.spawn.radius")
+  val VELOCITY0 = new Vec3D(confFloat("pen.vel0.x"),confFloat("pen.vel0.y"),confFloat("pen.vel0.z"))
+  val ATTRACTOR_STRENGTH = confFloat("sketch.attractorStrength")
+
+  val planetTexture = loadImage(data("planet2.jpg"))
 
   override def setup() {
-    //val w = 1400
-    //val h = 1000
-    size(1700,950,P3D)
+    size(config.getInt("sketch.width"),config.getInt("sketch.height"),P3D)
 
     blurShader = loadShader(data("blur.glsl"))
 
     physics = new VerletPhysics()
 
     minim = new Minim(this)
-    song = minim.loadFile(SONG_FILE, 1024)
+    song = minim.loadFile(SONG_FILE, config.getInt("song.bufferSize"))
     song.play(0)
-    //song.loop()
 
     pen = new Pen(new Vec3D(width/2,5,0), VELOCITY0, DEFAULT_RADIUS, -1, Pen.PALETTE)
     pens += pen
@@ -94,7 +96,7 @@ class VinylSketch extends MusicVideoApplet {
     if ( random(0.0f,1.0f)<=SPAWN_PROB ) {
       val loc = new Vec3D(pen.x,pen.y,pen.z)
       val (vx,vy) = (randomGaussian(),randomGaussian())
-      val pen0 = new Pen(loc,new Vec3D(vx,vy,-0.1f),SPAWN_RADIUS,SPAWN_LIFETIME,"paired")
+      val pen0 = new Pen(loc,new Vec3D(vx,vy,-0.1f),SPAWN_RADIUS,SPAWN_LIFETIME,"diverging2")
       pens += pen0
       physics.addParticle(pen0)
       pen0.setAttractor(loc,width/5,ATTRACTOR_STRENGTH/10.0f)
@@ -124,10 +126,11 @@ class VinylSketch extends MusicVideoApplet {
 
   object Pen {
     val COLOR=color(255.0f,255.0f,255.0f)
-    val RADIUS=3.0f
-    val VELOCITY_DISSIPATION=0.99996f
-    val TEMPERATURE=0.025f
-    val PALETTE="diverging2"
+    val RADIUS=confFloat("pen.radius0")
+    val VELOCITY_DISSIPATION=confFloat("pen.velocityDissipation")
+    val TEMPERATURE=confFloat("pen.temperature")
+    val PALETTE=config.getString("pen.palette")
+    val SHAPE=config.getString("pen.shape")
   }
 
   class Pen(loc:Vec3D, vel:Vec3D, val radiusFactor:Float, val lifeSpan:Int, val penPalette:String) extends VerletParticle(loc) with Agent {
@@ -140,6 +143,14 @@ class VinylSketch extends MusicVideoApplet {
       addVelocity(vel)
     }
 
+    val penShape = {
+      noStroke()
+      sphereDetail(40)
+      val _p = createShape(SPHERE,120)
+      _p.setTexture(planetTexture)
+      _p
+    }
+
     def setAttractor(center:Vec3D, radius:Float, strength:Float) = addBehavior( new AttractionBehavior(center,radius,strength) )
 
     def display() = {
@@ -147,14 +158,21 @@ class VinylSketch extends MusicVideoApplet {
       noStroke()
       lights()
       ambient(penColor)
+      //translate(this.x,this.y,this.z-20*radius)
       translate(this.x,this.y,this.z)
-      //sphere(radius)
-      box(radius)
+
+      Pen.SHAPE match {
+        case "sphere" => sphere(radius)
+        case "box" => box(radius)
+        case "planet" => {
+          scale(radius/270.0f)
+          shape(penShape)
+        }
+      }
 
       popMatrix()
+
       scaleVelocity(Pen.VELOCITY_DISSIPATION)
-      //val v = this.getVelocity
-      //logger.info( "pen at r=(%f,%f,%f) v=(%f,%f,%f)".format(this.x,this.y,this.z,v.x,v.y,v.z) )
     }
 
     def isDead = lifeSpan > 0 && age >= lifeSpan
@@ -163,7 +181,6 @@ class VinylSketch extends MusicVideoApplet {
 
     override def processEnvironment(time: Float, signals: Map[String, Array[Float]], events: Map[String, VideoEvent]): Unit = {
       val mfcc = signals("mfcc").slice(2,13)
-      //val smax = mfcc.max
       val mfccs = mfcc.sorted
       val m0 = mfccs(mfccs.length-1)
       val m1 = mfccs(mfccs.length-2)

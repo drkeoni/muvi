@@ -37,6 +37,11 @@ class MusicVideoSystem(song:AudioPlayer) extends LazyLogging {
 
   def register(agent:Agent) = agents.append(agent)
 
+  def unregister(agent:Agent):Unit = {
+    val i = agents.indexOf(agent)
+    if (i>=0) { agents.remove(i) }
+  }
+
   /**
    * Should be called once for each pass through the inner loop of the
    * processing applet.

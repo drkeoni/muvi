@@ -20,6 +20,9 @@ class MusicVideoApplet extends PApplet with LazyLogging {
   def data(s:String) = DATA_PATH + File.separator + s
   def configFile(s:String) = new File(DATA_PATH + File.separator + "config" + File.separator + s)
 
+  /** catalog of known mp3s for video applets
+    * mp3 are found in the data/ folder
+    */
   val songFiles = Seq( "01" -> "01_Sielvar.mp3",
                        "02" -> "02_Untitled.mp3",
                        "06" -> "06_Untitled.mp3",

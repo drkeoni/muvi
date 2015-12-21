@@ -1,9 +1,9 @@
 package org.nason.sketches
 
-import com.typesafe.config.ConfigFactory
+import scala.collection.mutable.ArrayBuffer
 import ddf.minim.{AudioPlayer, Minim}
-import org.nason.model.{VideoEvent, Agent, MusicVideoSystem, MusicVideoApplet}
-import org.nason.util.Color.palette
+import org.nason.model._
+import org.nason.util.Color._
 import processing.core.PApplet
 import processing.core.PConstants._
 import processing.opengl.PShader
@@ -11,30 +11,14 @@ import toxi.geom.Vec3D
 import toxi.physics.behaviors.AttractionBehavior
 import toxi.physics.{VerletParticle, VerletPhysics}
 
-import scala.collection.mutable.ArrayBuffer
-
-/**
- * Created by Jon on 10/26/2015.
- */
-object VinylSketch {
-  def main(args: Array[String]) = PApplet.main(Array[String]("VinylSketch","--full-screen","--external"))
+object VinylSketch2 {
+  def main(args: Array[String]) = PApplet.main(Array[String]("VinylSketch2","--full-screen","--external"))
 }
 
 /**
- * The basic concept behind this sketch is the drawing of a 3D Lissajous-like image using
- * inputs from the musical signal to control some of the values of the graphics.  An attractor
- * is set at the middle of the image (1/r attraction?) and a pen is set in motion at the top of
- * the screen.
- *
- * The color of the pen is set by the largest MFCC coefficient during that frame.
- * The radius of the pen is set by the volume level.
- *
- * The image can be adjusted by changing the initial velocity of the pen, the attractor strength,
- * the temperature of the brownian bath (aka gaussian noise added to velocity), and the friction coefficient.
- *
- * Progressive blurring during the drawing is applied to create a depth-of-focus effect.
+ * Created by Jon on 12/20/2015.
  */
-class VinylSketch extends MusicVideoApplet(Some("sketch1.conf")) {
+class VinylSketch2 extends MusicVideoApplet(Some("sketch2.conf")) {
   var physics:VerletPhysics = null
   var minim:Minim = null
   var song:AudioPlayer = null
@@ -43,6 +27,8 @@ class VinylSketch extends MusicVideoApplet(Some("sketch1.conf")) {
   var blurTime:Int = 0
   var drawBackground:Boolean = true
   val pens = new ArrayBuffer[Pen]()
+  var lattice:Lattice = null
+  var iGrid = -1
 
   val SONG_FILE = songFiles(config.getString("song.name"))
   val BG_COLOR = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
@@ -51,8 +37,10 @@ class VinylSketch extends MusicVideoApplet(Some("sketch1.conf")) {
   val SPAWN_PROB = confFloat("pen.spawn.prob")
   val SPAWN_LIFETIME = config.getInt("pen.spawn.lifetime")
   val SPAWN_RADIUS = confFloat("pen.spawn.radius")
+  val SPAWN_PALETTE = config.getString("pen.spawn.palette")
   val VELOCITY0 = new Vec3D(confFloat("pen.vel0.x"),confFloat("pen.vel0.y"),confFloat("pen.vel0.z"))
   val ATTRACTOR_STRENGTH = confFloat("sketch.attractorStrength")
+  val NUM_LATTICE_POINTS = config.getInt("sketch.grid.numPoints")
 
   val planetTexture = loadImage(data("planet2.jpg"))
 
@@ -65,35 +53,48 @@ class VinylSketch extends MusicVideoApplet(Some("sketch1.conf")) {
 
     minim = new Minim(this)
     song = minim.loadFile(SONG_FILE, config.getInt("song.bufferSize"))
+    logger.info( "Loaded song %s, song length is %.2f seconds".format(SONG_FILE,song.length()/1000.0))
     song.play(0)
 
-    pen = new Pen(new Vec3D(width/2,5,0), VELOCITY0, DEFAULT_RADIUS, -1, Pen.PALETTE)
-    pens += pen
-    physics.addParticle(pen)
-    pen.setAttractor(new Vec3D(width/2,height/2,0), width/2*2.5f, ATTRACTOR_STRENGTH)
+    lattice = LatticeMaker.createLattice(NUM_LATTICE_POINTS,LatticeMaker.SquareLattice)
 
     environment = new MusicVideoSystem(song)
+  }
+
+  def initializeAtGrid(i:Int): Unit = {
+    cull(true)
+    val bb = lattice.getShape(i,new Vec3D(width,height,1.0f))
+    clip(bb.x,bb.y,bb.width,bb.height)
+    pen = new Pen(new Vec3D(bb.x+bb.width/2,bb.y+5,0), VELOCITY0, DEFAULT_RADIUS, -1, Pen.PALETTE)
+    pens += pen
+    physics.addParticle(pen)
+    pen.setAttractor(new Vec3D(bb.x+bb.width/2,bb.y+bb.height/2,0), bb.width/2*2.5f, ATTRACTOR_STRENGTH)
+    logger.info("Starting new pen at %f,%f,%f".format(bb.width/2,bb.height/2,0f))
     environment.register(pen)
   }
 
   override def draw() {
-    physics.update()
-    environment.update(millis() / 1000.0f)
     if (drawBackground) {
       background(BG_COLOR)
       drawBackground = false
     }
 
+    val gridNumber = (millis().toDouble / song.length() * NUM_LATTICE_POINTS.toFloat).toInt
+    if (gridNumber > iGrid) {
+      iGrid = gridNumber
+      initializeAtGrid(iGrid)
+    }
+
+    physics.update()
+    environment.update(millis() / 1000.0f)
+
     ambientLight( 255.0f, 255.0f, 255.0f, width/4, height/4, 5 )
     pens.foreach( _.display() )
-
-    //camera(width/2.0f, height/2.0f, (height/2.0f) / Math.tan(PI*30.0 / 180.0).toFloat,pen.x,pen.y,pen.z,0f,1f,0f)
-    //camera(width/2.0f, height/2.0f, (height/2.0f) / Math.tan(PI*30.0 / 180.0).toFloat, width/2.0, height/2.0, 0.0f, 0.0f, 1.0f, 0.0f)
 
     if ( random(0.0f,1.0f)<=SPAWN_PROB ) {
       val loc = new Vec3D(pen.x,pen.y,pen.z)
       val (vx,vy) = (randomGaussian(),randomGaussian())
-      val pen0 = new Pen(loc,new Vec3D(vx,vy,-0.1f),SPAWN_RADIUS,SPAWN_LIFETIME,"diverging2")
+      val pen0 = new Pen(loc,new Vec3D(vx,vy,-0.1f),SPAWN_RADIUS,SPAWN_LIFETIME,SPAWN_PALETTE)
       pens += pen0
       physics.addParticle(pen0)
       pen0.setAttractor(loc,width/5,ATTRACTOR_STRENGTH/10.0f)
@@ -106,15 +107,18 @@ class VinylSketch extends MusicVideoApplet(Some("sketch1.conf")) {
       blurTime = 0
     }
 
-    cull()
+    cull(false)
 
-    logger.info("Frame rate = %.2f fps".format(frameRate))
+    //logger.debug("Frame rate = %.2f fps".format(frameRate))
   }
 
-  private def cull(): Unit =
+  /**
+   * @param force if true, remove all pens, regardless of life status
+   */
+  private def cull(force:Boolean): Unit =
     for( i <- pens.length-1 to 0 by -1 ) {
       val p = pens(i)
-      if (p.isDead) {
+      if (force || p.isDead) {
         pens.remove(i)
         physics.removeParticle(p)
         environment.unregister(p)
@@ -155,7 +159,6 @@ class VinylSketch extends MusicVideoApplet(Some("sketch1.conf")) {
       noStroke()
       lights()
       ambient(penColor)
-      //translate(this.x,this.y,this.z-20*radius)
       translate(this.x,this.y,this.z)
 
       Pen.SHAPE match {
@@ -187,8 +190,8 @@ class VinylSketch extends MusicVideoApplet(Some("sketch1.conf")) {
       //logger.info("level = %f".format(signals("level")(0)))
       radius = radiusFactor * signals("level")(0)
       addVelocity(new Vec3D(Pen.TEMPERATURE*randomGaussian(),
-                            Pen.TEMPERATURE*randomGaussian(),
-                            Pen.TEMPERATURE*randomGaussian()))
+        Pen.TEMPERATURE*randomGaussian(),
+        Pen.TEMPERATURE*randomGaussian()))
       age += 1
     }
   }

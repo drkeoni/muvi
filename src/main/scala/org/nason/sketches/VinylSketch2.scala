@@ -46,6 +46,7 @@ class VinylSketch2 extends MusicVideoApplet(Some("sketch2.conf")) {
 
   override def setup() {
     size(config.getInt("sketch.width"),config.getInt("sketch.height"),P3D)
+    blendMode(BLEND_MODE_TO_INT(config.getString("sketch.blendMode")))
 
     blurShader = loadShader(data("blur.glsl"))
 

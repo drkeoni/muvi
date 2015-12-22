@@ -1,10 +1,12 @@
 package org.nason.model
 
 import java.io.File
+import javafx.stage.Screen
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import processing.core.PApplet
+import processing.core.PConstants
 
 object MusicVideoApplet {
 
@@ -24,12 +26,26 @@ class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet with 
   val config = configFilePath.map(p=>ConfigFactory.parseFile(configFile(p))).getOrElse(ConfigFactory.empty())
   def confFloat(s:String) = config.getDouble(s).toFloat
 
+  val BLEND_MODE_TO_INT = Map(
+    "blend" -> PConstants.BLEND,
+    "add" -> PConstants.ADD,
+    "subtract" -> PConstants.SUBTRACT,
+    "darkest" -> PConstants.DARKEST,
+    "lightest" -> PConstants.LIGHTEST,
+    "difference" -> PConstants.DIFFERENCE,
+    "exclusion" -> PConstants.EXCLUSION,
+    "multiply" -> PConstants.MULTIPLY,
+    "screen" -> PConstants.SCREEN,
+    "replace" -> PConstants.REPLACE
+  )
+
   /** catalog of known mp3s for video applets
     * mp3 are found in the data/ folder
     */
   val songFiles = Seq( "01" -> "01_Sielvar.mp3",
                        "02" -> "02_Untitled.mp3",
                        "06" -> "06_Untitled.mp3",
+                       "72" -> "expt_seventy_two_c.mp3",
                        "cello" -> "cello_suite_no_5_prelude.mp3",
                        "140" -> "expt_140_mixdown_a.mp3",
                        "150" -> "expt_150_mixdown_c.mp3",

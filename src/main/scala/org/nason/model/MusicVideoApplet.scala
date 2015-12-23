@@ -46,6 +46,7 @@ class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet with 
                        "02" -> "02_Untitled.mp3",
                        "06" -> "06_Untitled.mp3",
                        "72" -> "expt_seventy_two_c.mp3",
+                       "87" -> "expt_87_mixdown_a.mp3",
                        "cello" -> "cello_suite_no_5_prelude.mp3",
                        "140" -> "expt_140_mixdown_a.mp3",
                        "150" -> "expt_150_mixdown_c.mp3",

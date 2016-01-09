@@ -4,7 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import ddf.minim.{AudioPlayer, Minim}
 import org.nason.model._
 import org.nason.util.Color._
-import processing.core.PApplet
+import processing.core.{PImage, PApplet}
 import processing.core.PConstants._
 import processing.opengl.PShader
 import toxi.geom.Vec3D
@@ -12,13 +12,13 @@ import toxi.physics.behaviors.AttractionBehavior
 import toxi.physics.{VerletParticle, VerletPhysics}
 
 object VinylSketch2 {
-  def main(args: Array[String]) = PApplet.main(Array[String]("VinylSketch2","--full-screen","--external"))
+  def main(args: Array[String]) = PApplet.runSketch( Array[String]("VinylSketch2"), new VinylSketch2() )
 }
 
 /**
  * Created by Jon on 12/20/2015.
  */
-class VinylSketch2 extends MusicVideoApplet(Some("sketch2.conf")) {
+class VinylSketch2() extends MusicVideoApplet(Some("sketch2.conf")) {
   var physics:VerletPhysics = null
   var minim:Minim = null
   var song:AudioPlayer = null
@@ -29,6 +29,7 @@ class VinylSketch2 extends MusicVideoApplet(Some("sketch2.conf")) {
   val pens = new ArrayBuffer[Pen]()
   var lattice:Lattice = null
   var iGrid = -1
+  var planetTexture:PImage = null
 
   val SONG_FILE = songFiles(config.getString("song.name"))
   val BG_COLOR = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
@@ -42,13 +43,14 @@ class VinylSketch2 extends MusicVideoApplet(Some("sketch2.conf")) {
   val ATTRACTOR_STRENGTH = confFloat("sketch.attractorStrength")
   val NUM_LATTICE_POINTS = config.getInt("sketch.grid.numPoints")
 
-  val planetTexture = loadImage(data("planet2.jpg"))
-
-  override def setup() {
+  override def settings(): Unit = {
     size(config.getInt("sketch.width"),config.getInt("sketch.height"),P3D)
-    blendMode(BLEND_MODE_TO_INT(config.getString("sketch.blendMode")))
+  }
 
+  override def setup(): Unit = {
+    blendMode(BLEND_MODE_TO_INT(config.getString("sketch.blendMode")))
     blurShader = loadShader(data("blur.glsl"))
+    planetTexture = loadImage(data("planet2.jpg"))
 
     physics = new VerletPhysics()
 

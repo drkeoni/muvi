@@ -9,3 +9,9 @@ An array of hexagons, like lily pads.  Light up with MFCC signals.
 I really like the effect where foreground images are very sharp (and photorealistic ideally) and the background is
 heavily blurred (depth of focus effect).
 
+Wrapping the musical line around a faux music box cylinder,
+rotating in the middle of the screen.  Lines of "music" spin off.
+
+Go back to a crystal simulation I programmed in England.  Have a landscape
+growing from falling snow crystals or sand or water drops, where the
+drops hit some of them grow and become Lindenmayer ferns.

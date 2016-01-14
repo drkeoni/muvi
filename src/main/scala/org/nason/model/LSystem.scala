@@ -16,23 +16,32 @@ case class LSystemRules( rules:Map[Char,String] )
 object LSystem {
 
 
-  def createFromConfig( config:Config ) : LSystem = {
-    val rule0 = config.getString("lsystem.rule0")
+  /**
+    * Returns an LSystem configured from the supplied Config object.  The default behavior
+    * is to look under the lsystem{} section of the file but a different root path can be provided
+    * by setting the section parameter.
+    * @param config
+    * @param section
+    * @return
+    */
+  def createFromConfig( config:Config, section:String="lsystem" ) : LSystem = {
+    def p(s:String) = section+"."+s
+    val rule0 = config.getString(p("rule0"))
     val rules = {
-      config.getObject("lsystem.rules").unwrapped().asScala
+      config.getObject(p("rules")).unwrapped().asScala
             .map{ case (k:String,v:AnyRef) => (k.charAt(0),v.asInstanceOf[String]) }
             .toMap
     }
-    val n = config.getInt("lsystem.n")
+    val n = config.getInt(p("n"))
     val system = new LSystem(rule0,new LSystemRules(rules),n)
 
     def confFloat( k:String ) = config.getDouble(k).toFloat
-    system.agent.initialize( new Vec3D(confFloat("lsystem.agent.x0.x"),confFloat("lsystem.agent.x0.y"),confFloat("lsystem.agent.x0.z")),
-                             config.getInt("lsystem.agent.size0"),
-                             new Vec3D(confFloat("lsystem.agent.v0.x"),confFloat("lsystem.agent.v0.y"),confFloat("lsystem.agent.v0.z")) )
+    system.agent.initialize( new Vec3D(confFloat(p("agent.x0.x")),confFloat(p("agent.x0.y")),confFloat(p("agent.x0.z"))),
+                             config.getInt(p("agent.size0")),
+                             new Vec3D(confFloat(p("agent.v0.x")),confFloat(p("agent.v0.y")),confFloat(p("agent.v0.z"))) )
 
 
-    val rots = config.getObject("lsystem.agent.rotations")
+    val rots = config.getObject(p("agent.rotations"))
     for( k<-rots.keySet().asScala ) {
       val o = rots.get(k).asInstanceOf[ConfigObject].toConfig
       val rx = o.getDouble("x").toFloat
@@ -79,6 +88,11 @@ object LSystemAgent {
   val DEFAULT_ROTATE_LEFT = new Matrix4x4().identity().rotateZ(60.0*DEG2RAD)
 }
 
+/**
+  * Implements a 'turtle' in 3D space which moves following the instructions
+  * in the provided rule.
+  * @param rule
+  */
 class LSystemAgent( rule:String ) extends LazyLogging {
 
   val x : Vec3D = new Vec3D(0.0f,0.0f,0.0f)
@@ -117,6 +131,9 @@ class LSystemAgent( rule:String ) extends LazyLogging {
     }
   }
 
+  /**
+    * @return true if there are more moves to process
+    */
   def advance() : Boolean = {
     if ( subStep<speed ) {
       subStep += 1
@@ -128,7 +145,7 @@ class LSystemAgent( rule:String ) extends LazyLogging {
         step += 1
       }
     }
-    step < l
+    !isDead
   }
 
   def isDead = step >= l
@@ -136,5 +153,4 @@ class LSystemAgent( rule:String ) extends LazyLogging {
   override def toString() : String = {
     "LSA { x=(%f,%f,%f), size=%d, v=(%f,%f,%f) }".format(x.x,x.y,x.z,size,v.x,v.y,v.z)
   }
-
 }

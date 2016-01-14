@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import processing.core.PApplet
 import processing.core.PConstants
+import processing.core.PConstants._
 
 object MusicVideoApplet {
 
@@ -54,4 +55,8 @@ class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet with 
                      )
     .map( x => (x._1,data(x._2)) )
     .toMap
+
+  override def settings(): Unit = {
+    size(config.getInt("sketch.width"),config.getInt("sketch.height"),P3D)
+  }
 }

@@ -43,10 +43,6 @@ class VinylSketch2() extends MusicVideoApplet(Some("sketch2.conf")) {
   val ATTRACTOR_STRENGTH = confFloat("sketch.attractorStrength")
   val NUM_LATTICE_POINTS = config.getInt("sketch.grid.numPoints")
 
-  override def settings(): Unit = {
-    size(config.getInt("sketch.width"),config.getInt("sketch.height"),P3D)
-  }
-
   override def setup(): Unit = {
     blendMode(BLEND_MODE_TO_INT(config.getString("sketch.blendMode")))
     blurShader = loadShader(data("blur.glsl"))

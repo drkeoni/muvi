@@ -14,7 +14,7 @@ import scala.collection.mutable.ArrayBuffer
  * Created by Jon on 10/1/2015.
  */
 object MfccDemo {
-  def main(args: Array[String]) = PApplet.main(Array[String]("MfccDemo","--full-screen","--external"))
+  def main(args: Array[String]) = PApplet.runSketch( Array[String]("MfccDemo"),new MfccDemo())
 }
 
 class MfccDemo extends MusicVideoApplet {

@@ -11,7 +11,7 @@ import toxi.geom.Vec3D
   * Created by Jon on 12/23/2015.
   */
 object Lindenmayer {
-  def main(args: Array[String]) = PApplet.main(Array[String]("Lindenmayer","--full-screen","--external"))
+  def main(args: Array[String]) = PApplet.runSketch( Array[String]("Lindenmayer"), new Lindenmayer() )
 }
 
 class Lindenmayer extends MusicVideoApplet(Some("sketch3.conf")) {

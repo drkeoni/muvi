@@ -15,7 +15,6 @@ case class LSystemRules( rules:Map[Char,String] )
 
 object LSystem {
 
-
   /**
     * Returns an LSystem configured from the supplied Config object.  The default behavior
     * is to look under the lsystem{} section of the file but a different root path can be provided

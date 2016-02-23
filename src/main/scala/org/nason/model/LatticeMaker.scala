@@ -51,6 +51,12 @@ object Lattice {
   val UNITY_SCALE = new Vec3D(1.0f,1.0f,1.0f)
 }
 
+/**
+  * A Lattice is a sequence of points in 3D.  Each point is associated with
+  * a bounding box.
+  * @param points
+  * @param shape
+  */
 class Lattice( private val points:Seq[LatticePoint], private val shape:Rect  ) {
   def size : Int = points.length
   def point(i:Int) : LatticePoint = points(i)

@@ -63,7 +63,6 @@ class Lindenmayer extends MusicVideoApplet(Some("sketch3.conf")) {
     popMatrix()
 
     if (agentStep==AGENT_SPEED) {
-      //logger.info("Now agent is at %s".format(lsystem.agent))
       agentStep = 0
       if (!lsystem.agent.isDead) {
         lsystem.agent.advance()

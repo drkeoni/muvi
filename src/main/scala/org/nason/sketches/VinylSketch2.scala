@@ -45,7 +45,7 @@ class VinylSketch2() extends MusicVideoApplet(Some("sketch2.conf")) {
 
   override def setup(): Unit = {
     blendMode(BLEND_MODE_TO_INT(config.getString("sketch.blendMode")))
-    blurShader = loadShader(data("blur.glsl"))
+    blurShader = loadShader(glsl("blur.glsl"))
     planetTexture = loadImage(data("planet2.jpg"))
 
     physics = new VerletPhysics()
@@ -72,7 +72,7 @@ class VinylSketch2() extends MusicVideoApplet(Some("sketch2.conf")) {
     environment.register(pen)
   }
 
-  override def draw() {
+  override def draw() = {
     if (drawBackground) {
       background(BG_COLOR)
       drawBackground = false

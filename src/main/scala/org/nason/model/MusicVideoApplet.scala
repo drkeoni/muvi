@@ -14,7 +14,19 @@ object MusicVideoApplet {
 }
 
 /**
- * Created by Jon on 10/8/2015.
+  * This forms the base class for all of the sketches in this project
+  *
+  * By using this base class, sketches obtain the following
+  *  - a MusicVideoSystem
+  *  - config file support
+  *  - logging support
+  *  - conventions for finding auxiliary files
+  *
+  * The .conf file for the applet should contain a section titled "sketch" with
+  * parameters "width" and "height".  All other configuration sections are left to the
+  * sketch for interpretation.
+  *
+  * 10/8/2015.
  */
 class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet with LazyLogging {
   var environment: MusicVideoSystem = null
@@ -22,6 +34,7 @@ class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet with 
   val CLASS_PATH:String = MusicVideoApplet.getClass.getProtectionDomain.getCodeSource.getLocation.getPath
   val DATA_PATH = new File(List(CLASS_PATH, "..", "..", "..", "data").mkString(File.separator)).getCanonicalPath
   def data(s:String) = DATA_PATH + File.separator + s
+  def glsl(s:String) = data("glsl" + File.separator + s)
   def configFile(s:String) = new File(DATA_PATH + File.separator + "config" + File.separator + s)
 
   val config = configFilePath.map(p=>ConfigFactory.parseFile(configFile(p))).getOrElse(ConfigFactory.empty())

@@ -1,6 +1,8 @@
 package org.nason.sketches
 
 import org.nason.model.MusicVideoApplet
+import org.nason.util.Color.palette
+
 import processing.core.{PGraphics, PImage, PApplet}
 import processing.opengl.PShader
 import processing.core.PConstants.{NORMAL,P3D}
@@ -31,21 +33,38 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
     rdShaders += loadShader(glsl("rd_frag_1.glsl"))
     rdShaders += loadShader(glsl("rd_frag_2.glsl"))
 
-    rdShaders(0).set("delta", 0.29f)
-    rdShaders(0).set("feed", 0.025f)
-    rdShaders(0).set("kill", 0.026f)
+    rdShaders(0).set("delta", 0.05f)
+    rdShaders(0).set("feed", 0.045f)
+    rdShaders(0).set("kill", 0.042f)
     rdShaders(0).set("screenWidth", this.width.toFloat)
     rdShaders(0).set("screenHeight", this.height.toFloat)
 
-    rdShaders(1).set("color1",0.8f,0.8f,0.5f,0.0f)
-    rdShaders(1).set("color2",0.6f,0.5f,0.9f,0.6f)
-    rdShaders(1).set("color3",0.6f,0.3f,0.4f,0.7f)
-    rdShaders(1).set("color4",0.5f,0.9f,0.5f,0.8f)
-    rdShaders(1).set("color5",0.8f,0.8f,0.9f,1.0f)
+    val colors = (0 until 5).map( palette("diverging",_) ).map( c => ( c._1/255.0f, c._2/255.0f, c._3/255.0f ) )
+    val alphas = Seq(0.0f,0.9f,0.94f,0.98f,1.0f)
 
-    image = loadImage(data("planet.jpg"))
+    for( i<-0 until 5 ) {
+      val col = colors(i)
+      logger.info( "col=%f,%f,%f".format(col._1,col._2,col._3))
+      rdShaders(1).set("color%d".format(i+1),col._1,col._2,col._3,alphas(i))
+    }
 
+    //image = loadImage(data("planet.jpg"))
+    image = randomImage(this.width,this.height)
     canvas = createGraphics(this.width, this.height, P3D)
+  }
+
+  def randomImage(width:Int,height:Int):PImage = {
+    val c = createGraphics(width,height,P3D)
+    c.beginDraw()
+    c.background(BG_COLOR)
+    for( i<-0 to width ) {
+      for( j<-0 to height ) {
+        val color_ = color(random(0f,255f),random(0f,255f),random(0f,255f))
+        c.set(i,j,color_)
+      }
+    }
+    c.endDraw()
+    c.copy()
   }
 
   override def draw() = {
@@ -55,10 +74,10 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
       canvas.textureMode(NORMAL)
       canvas.beginShape()
       canvas.texture(image)
-      canvas.vertex(10, 20, 0, 0)
-      canvas.vertex(80, 5, 1, 0)
-      canvas.vertex(95, 90, 1, 1)
-      canvas.vertex(40, 95, 0, 1)
+      canvas.vertex(0,0,0,0)
+      canvas.vertex(0,height,0,1)
+      canvas.vertex(width,height,1,1)
+      canvas.vertex(width,0,1,0)
       canvas.endShape()
       canvas.endDraw()
       first = false
@@ -69,13 +88,7 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
 
     canvas.beginDraw()
     canvas.shader(rdShaders(0))
-    canvas.beginShape()
-    canvas.texture(data)
-    canvas.vertex(0,0,0,0)
-    canvas.vertex(0,height,0,1)
-    canvas.vertex(width,height,1,1)
-    canvas.vertex(width,0,1,0)
-    canvas.endShape()
+    canvas.image(data,0,0,width,height)
     canvas.resetShader()
     canvas.endDraw()
 

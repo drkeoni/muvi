@@ -118,9 +118,9 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
       canvas.endDraw()
       first = false
       data = canvas.copy()
+      shader(rdShaders(1))
     }
     for( i<-0 until 10 ) {
-      //canvas.clear()
       canvas.beginDraw()
       canvas.image(data, 0, 0, width, height)
       canvas.endDraw()
@@ -129,9 +129,9 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
 
     val s = 1.0f
 
-    shader(rdShaders(1))
+    //shader(rdShaders(1))
     image(data,0,0,s*width,s*height)
-    resetShader()
+    //resetShader()
   }
 
 }

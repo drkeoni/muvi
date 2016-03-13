@@ -16,7 +16,7 @@ float feed_low = feed*0.7;
 float feed_high = feed*1.9;
 //float feed_low = feed;
 //float feed_high = feed;
-vec2 D = vec2( 0.2097, 0.105 );
+vec2 D = vec2( 0.2099, 0.105 );
 
 //
 // my starting point was https://github.com/pmneila/jsexp

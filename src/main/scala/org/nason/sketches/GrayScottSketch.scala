@@ -40,7 +40,7 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
   val CANVAS_HEIGHT = config.getInt("sketch.canvas.height")
 
   override def setup(): Unit = {
-    blurShader = loadShader(glsl("blur.glsl"))
+    blurShader = loadShader(glsl("blur_softer.glsl"))
     physics = new VerletPhysics()
 
     minim = new Minim(this)
@@ -120,17 +120,17 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
       shader(rdShaders(1))
     }
     for( i<-0 until 5 ) {
+      canvas.clear()
       canvas.beginDraw()
+      canvas.rotate(millis()/1000.0f*2.0f*PI/120.0f)
       canvas.image(data, 0, 0, CANVAS_WIDTH, CANVAS_WIDTH)
+      //canvas.filter(blurShader)
       canvas.endDraw()
       data = canvas.copy()
     }
-
-    val s = 1.0f
-
+    val s = random(0.995f,1.005f)
     environment.update(millis() / 1000.0f)
-
-    image(data,width/2-CANVAS_WIDTH/2,height/2-CANVAS_HEIGHT/2)
+    image(data,width/2-CANVAS_WIDTH/2+random(0,3)-2,height/2-CANVAS_HEIGHT/2+random(0,3)-2,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
   }
 
   class Feeder extends Agent {

@@ -38,6 +38,6 @@ void main()
                      D.g*lapl.g + uv.r*uv.g*uv.g - (f+kill)*uv.g );
     vec2 dst = uv + delta*uv4;
 
-    gl_FragColor = vec4(dst.r, dst.g, 0.0, 1.0);
+    gl_FragColor = vec4(dst.r, dst.g, 0.0, 0.7);
     //gl_FragColor = mix( vertColor, vec4(dst.r, dst.g, 0.0, 1.0), 1.0 );
 }

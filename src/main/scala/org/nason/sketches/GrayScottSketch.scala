@@ -161,11 +161,15 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
 
       canvas.beginDraw()
       canvas.image(data, 0, 0)
-      canvas.fill(color(0,random(125,255),0))
+      val color_ = color(0,random(125,255),0)
+      canvas.fill(color_)
       //logger.info("drawing at %d,%d".format(x,y))
       val w = random(25,65).toInt
       canvas.noStroke()
+      canvas.ellipse(x-2,y+2,w+4,w+4)
+      canvas.fill(color(0,random(125,255),0))
       canvas.ellipse(x,y,w,w)
+      canvas.fill(color_)
       canvas.pushMatrix()
       canvas.translate(x+w/2+10,y-3)
       canvas.rotate(time*2.0f*PI/10.0f)

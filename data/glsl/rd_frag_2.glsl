@@ -23,9 +23,12 @@ void main()
     //float a = fract(value);
     float a;
     vec3 col;
+    float a2 = 1.0;
 
-    if(value <= color1.a)
+    if(value <= color1.a) {
         col = color1.rgb;
+        a2 = 0.98;
+    }
     if(value > color1.a && value <= color2.a)
     {
         a = (value - color1.a)/(color2.a - color1.a);
@@ -46,8 +49,10 @@ void main()
         a = (value - color4.a)/(color5.a - color4.a);
         col = mix(color4.rgb, color5.rgb, a);
     }
-    if(value > color5.a)
+    if(value > color5.a) {
         col = color5.rgb;
+        a2 = 0.95;
+    }
 
-    gl_FragColor = vec4(col.r, col.g, col.b, 1.0);
+    gl_FragColor = vec4(col.r, col.g, col.b, a2);
 }

@@ -27,7 +27,7 @@ void main()
 
     if(value <= color1.a) {
         col = color1.rgb;
-        a2 = 0.98;
+        a2 = 0.8;
     }
     if(value > color1.a && value <= color2.a)
     {
@@ -51,7 +51,7 @@ void main()
     }
     if(value > color5.a) {
         col = color5.rgb;
-        a2 = 0.95;
+        a2 = 0.5;
     }
 
     gl_FragColor = vec4(col.r, col.g, col.b, a2);

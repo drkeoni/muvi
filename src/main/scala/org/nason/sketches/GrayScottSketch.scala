@@ -119,18 +119,18 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
       data = canvas.copy()
       shader(rdShaders(1))
     }
+    environment.update(millis() / 1000.0f)
     for( i<-0 until 5 ) {
       canvas.clear()
       canvas.beginDraw()
       canvas.rotate(millis()/1000.0f*2.0f*PI/120.0f)
       canvas.image(data, 0, 0, CANVAS_WIDTH, CANVAS_WIDTH)
-      //canvas.filter(blurShader)
+      canvas.filter(blurShader)
       canvas.endDraw()
       data = canvas.copy()
     }
-    val s = random(0.995f,1.005f)
-    environment.update(millis() / 1000.0f)
-    image(data,width/2-CANVAS_WIDTH/2+random(0,3)-2,height/2-CANVAS_HEIGHT/2+random(0,3)-2,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
+    val s = random(0.995f,1.005f)+millis()/(5*60000.0f)
+    image(data,width/2-s*CANVAS_WIDTH/2+random(0,3)-2,height/2-s*CANVAS_HEIGHT/2+random(0,3)-2,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
   }
 
   class Feeder extends Agent {
@@ -149,9 +149,7 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
       val mfcc = signals("mfcc").slice(2,13)
       val mfccs = mfcc.sorted
       val m0 = mfccs(mfccs.length-1)
-      val m1 = mfccs(mfccs.length-2)
       val mfcc0 = mfcc.indexWhere( s => s==m0 )
-      val mfcc1 = mfcc.indexWhere( s => s==m1 )
 
       val theta = mfcc0 * 2.0 * PI / 12.0
       val ct = Math.cos(theta)
@@ -163,10 +161,9 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
       canvas.image(data, 0, 0)
       val color_ = color(0,random(125,255),0)
       canvas.fill(color_)
-      //logger.info("drawing at %d,%d".format(x,y))
       val w = random(25,65).toInt
       canvas.noStroke()
-      canvas.ellipse(x-2,y+2,w+4,w+4)
+      canvas.ellipse(x-2,y+2,w+random(4,8),w+random(4,8))
       canvas.fill(color(0,random(125,255),0))
       canvas.ellipse(x,y,w,w)
       canvas.fill(color_)

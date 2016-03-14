@@ -12,8 +12,8 @@ uniform float kill;
 
 float step_x = 1.0/screenWidth;
 float step_y = 1.0/screenHeight;
-float feed_low = feed*0.7;
-float feed_high = feed*1.9;
+float feed_low = feed*0.3;
+float feed_high = feed*1.2;
 //float feed_low = feed;
 //float feed_high = feed;
 vec2 D = vec2( 0.2099, 0.105 );
@@ -31,7 +31,10 @@ void main()
     vec2 uv2 = texture2D(texture, vUv+vec2(0.0, -step_y)).rg;
     vec2 uv3 = texture2D(texture, vUv+vec2(0.0, step_y)).rg;
 
-    float f = feed_low + (feed_high-feed_low)*vertTexCoord.s;
+    float distsq = dot(vUv-0.5,vUv-0.5);
+    //float falpha = vertTexCoord.s;
+    float falpha = distsq / 0.25;
+    float f = feed_low + (feed_high-feed_low)*falpha;
 
     vec2 lapl = (uv0 + uv1 + uv2 + uv3 - 4.0*uv);
     vec2 uv4 = vec2( D.r*lapl.r - uv.r*uv.g*uv.g + f*(1.0 - uv.r),

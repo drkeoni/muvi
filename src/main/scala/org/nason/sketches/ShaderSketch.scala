@@ -29,35 +29,29 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
   val BG_COLOR = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
 
   override def setup(): Unit = {
-    //blurShader = loadShader(glsl("blur.glsl"))
-    rdShaders += loadShader(glsl("rd_frag_1.glsl"),glsl("rd_vert_1.glsl"))
-    rdShaders += loadShader(glsl("rd_frag_2.glsl"),glsl("rd_vert_1.glsl"))
+    rdShaders += loadShader(glsl(config.getString("grayscott.pde_shader")),glsl("rd_vert_1.glsl"))
+    rdShaders += loadShader(glsl(config.getString("grayscott.color_shader")),glsl("rd_vert_2.glsl"))
 
-    rdShaders(0).set("delta", 1.1f)
-    rdShaders(0).set("feed", 0.0375f)
-    rdShaders(0).set("kill", 0.06f)
+    rdShaders(0).set("delta", confFloat("grayscott.delta"))
+    rdShaders(0).set("feed", confFloat("grayscott.feed"))
+    rdShaders(0).set("kill", confFloat("grayscott.kill"))
     rdShaders(0).set("screenWidth", this.width.toFloat)
     rdShaders(0).set("screenHeight", this.height.toFloat)
 
-    //val colors = (0 until 5).map( palette("diverging",_) ).map( c => ( c._1/255.0f, c._2/255.0f, c._3/255.0f ) )
-    val colors = Seq(
-      (0f,0f,0f),
-      (0f,1f,0f),
-      (1f,1f,0f),
-      (1f,0f,0f),
-      (1f,1f,1f)
-    )
-    val alphas = Seq(0.0f,0.2f,0.21f,0.4f,0.6f)
+    val alphas = config.getString("grayscott.alphas").split(",").map(s => s.toFloat)
+    val intercept = config.getInt("grayscott.color_intercept")
+    val slope = config.getInt("grayscott.color_slope")
+    val colors = alphas.indices.map( i => palette(config.getString("grayscott.palette"),intercept-i*slope) ).map( c => ( c._1/255.0f, c._2/255.0f, c._3/255.0f ) )
 
-    for( i<-0 until 5 ) {
+    for(i<-alphas.indices) {
       val col = colors(i)
       val name = "color%d".format(i+1)
       logger.info( "%s=%f,%f,%f,%f".format(name,col._1,col._2,col._3,alphas(i)))
       rdShaders(1).set(name,col._1,col._2,col._3,alphas(i))
     }
 
-    //image = loadImage(data("planet.jpg"))
-    image = circleImage(this.width,this.height)
+    //image = randomImage(this.width,this.height)
+    image = circleImage(this.width,this.height,config.getString("grayscott.init.shape"))
     canvas = createGraphics(this.width, this.height, P3D)
   }
 
@@ -87,16 +81,21 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
     c.copy()
   }
 
-  def circleImage(width:Int,height:Int):PImage = {
+  def circleImage(width:Int,height:Int,shape:String):PImage = {
     val c = createGraphics(width,height,P3D)
+    val drawShape = shape match {
+      case "square" => { (x:Int,y:Int,d:Int) => c.rect(x,y,d,d) }
+      case "circle" => { (x:Int,y:Int,d:Int) => c.ellipse(x,y,d,d) }
+    }
+
     c.beginDraw()
     c.background(BG_COLOR)
-    for( i <- 0 until random(90.0f,140.0f).toInt ) {
+    for( i <- 0 until config.getInt("grayscott.init.n_circles") ) {
       c.fill( color(255,random(0,30),60) )
       val d = 2*random(10.0f,30.0f).toInt
-      val x = random(0,width-10)
-      val y = random(0,height-10)
-      c.ellipse(x,y,d,d)
+      val x = random(0,width-10).toInt
+      val y = random(0,height-10).toInt
+      drawShape(x,y,d)
     }
     c.endDraw()
     c.copy()
@@ -118,7 +117,8 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
       canvas.endDraw()
       first = false
       data = canvas.copy()
-      shader(rdShaders(1))
+      if ( config.getBoolean("grayscott.use_color_shader") )
+        shader(rdShaders(1))
     }
     for( i<-0 until 10 ) {
       canvas.beginDraw()
@@ -129,9 +129,7 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
 
     val s = 1.0f
 
-    //shader(rdShaders(1))
     image(data,0,0,s*width,s*height)
-    //resetShader()
   }
 
 }

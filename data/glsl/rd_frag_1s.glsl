@@ -12,8 +12,8 @@ uniform float kill;
 
 float step_x = 1.0/screenWidth;
 float step_y = 1.0/screenHeight;
-float feed_low = feed*0.3;
-float feed_high = feed*0.5;
+float feed_low = feed;
+float feed_high = feed;
 vec2 D = vec2( 0.2099, 0.1105 );
 
 //

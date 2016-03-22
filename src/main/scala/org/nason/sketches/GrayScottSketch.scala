@@ -36,6 +36,7 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
   val BG_COLOR = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
   val BLUR_TIME = config.getInt("sketch.blurTime")
 
+  val CANVAS_ROTATE_PERIOD = config.getDouble("sketch.canvas.period").toFloat
   val CANVAS_WIDTH = config.getInt("sketch.canvas.width")
   val CANVAS_HEIGHT = config.getInt("sketch.canvas.height")
 
@@ -67,16 +68,8 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
     rdShaders(0).set("screenWidth", CANVAS_WIDTH.toFloat)
     rdShaders(0).set("screenHeight", CANVAS_WIDTH.toFloat)
 
+    val alphas = config.getString("grayscott.alphas").split(",").map(s => s.toFloat)
     val colors = (0 until 5).map( i => palette(config.getString("grayscott.palette"),10-i*2) ).map( c => ( c._1/255.0f, c._2/255.0f, c._3/255.0f ) )
-    /*val colors = Seq(
-      (0f,0f,0f),
-      (0f,1f,0f),
-      (1f,1f,0f),
-      (1f,0f,0f),
-      (1f,1f,1f)
-    )*/
-    val alphas = Seq(0.0f,0.2f,0.21f,0.4f,0.6f)
-
     for( i<-0 until 5 ) {
       val col = colors(i)
       val name = "color%d".format(i+1)
@@ -101,8 +94,8 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
   }
 
   override def draw() = {
+    background(BG_COLOR)
     if (first) {
-      background(0)
       canvas.shader(rdShaders(0))
       canvas.beginDraw()
       canvas.background(BG_COLOR)
@@ -123,7 +116,7 @@ class GrayScottSketch() extends MusicVideoApplet(Some("gs_sketch.conf")) {
     for( i<-0 until 5 ) {
       canvas.clear()
       canvas.beginDraw()
-      canvas.rotate(millis()/1000.0f*2.0f*PI/120.0f)
+      canvas.rotate(millis()/1000.0f*2.0f*PI/CANVAS_ROTATE_PERIOD)
       canvas.image(data, 0, 0, CANVAS_WIDTH, CANVAS_WIDTH)
       canvas.filter(blurShader)
       canvas.endDraw()

@@ -27,6 +27,7 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
   var data:PImage = null
 
   val BG_COLOR = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
+  val NUM_STEPS_PER_RENDER = config.getInt("grayscott.num_steps_per_render")
 
   override def setup(): Unit = {
     rdShaders += loadShader(glsl(config.getString("grayscott.pde_shader")),glsl("rd_vert_1.glsl"))
@@ -37,6 +38,13 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
     rdShaders(0).set("kill", confFloat("grayscott.kill"))
     rdShaders(0).set("screenWidth", this.width.toFloat)
     rdShaders(0).set("screenHeight", this.height.toFloat)
+
+    rdShaders(0).set("modMult",confFloat("grayscott.mod_mult"))
+    rdShaders(0).set("modPct",confFloat("grayscott.mod_pct"))
+    rdShaders(0).set("modOffset",confFloat("grayscott.mod_offset"))
+
+    rdShaders(0).set("feedLowMult",confFloat("grayscott.feed_low_mult"))
+    rdShaders(0).set("feedHighMult",confFloat("grayscott.feed_high_mult"))
 
     val alphas = config.getString("grayscott.alphas").split(",").map(s => s.toFloat)
     val intercept = config.getInt("grayscott.color_intercept")
@@ -120,7 +128,7 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
       if ( config.getBoolean("grayscott.use_color_shader") )
         shader(rdShaders(1))
     }
-    for( i<-0 until 10 ) {
+    for( i<-0 until NUM_STEPS_PER_RENDER ) {
       canvas.beginDraw()
       canvas.image(data, 0, 0, width, height)
       canvas.endDraw()

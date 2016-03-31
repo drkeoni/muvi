@@ -10,10 +10,17 @@ uniform float delta;
 uniform float feed;
 uniform float kill;
 
+uniform float modMult;
+uniform float modPct;
+uniform float modOffset;
+
+uniform float feedLowMult;
+uniform float feedHighMult;
+
 float step_x = 1.0/screenWidth;
 float step_y = 1.0/screenHeight;
-float feed_low = feed;
-float feed_high = feed;
+float feed_low = feed*feedLowMult;
+float feed_high = feed*feedHighMult;
 vec2 D = vec2( 0.2099, 0.1105 );
 
 //
@@ -36,8 +43,9 @@ void main()
     float f = feed_low + (feed_high-feed_low)*falpha;
 
     vec2 lapl = (uv0 + uv1 + uv2 + uv3 - 4.0*uv);
-    vec2 uv4 = vec2( D.r*lapl.r - uv.r*uv.g*uv.g + f*(1.0 - uv.r),
-                     D.g*lapl.g + uv.r*uv.g*uv.g - (f+kill)*uv.g );
+    vec2 d_mod = modMult * D * lapl * (mod(vUv,vec2(modPct,modPct)) + modOffset);
+    vec2 uv4 = vec2( d_mod.r - uv.r*uv.g*uv.g + f*(1.0 - uv.r),
+                     d_mod.g + uv.r*uv.g*uv.g - (f+kill)*uv.g );
     vec2 dst = uv + delta*uv4;
 
     gl_FragColor = vec4(dst.r, dst.g, 0.0, 0.7);

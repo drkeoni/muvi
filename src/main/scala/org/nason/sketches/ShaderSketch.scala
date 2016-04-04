@@ -28,6 +28,7 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
 
   val BG_COLOR = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
   val NUM_STEPS_PER_RENDER = config.getInt("grayscott.num_steps_per_render")
+  val JITTER_SIGMA = confFloat("grayscott.jitter_sigma")
 
   override def setup(): Unit = {
     rdShaders += loadShader(glsl(config.getString("grayscott.pde_shader")),glsl("rd_vert_1.glsl"))
@@ -58,35 +59,8 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
       rdShaders(1).set(name,col._1,col._2,col._3,alphas(i))
     }
 
-    //image = randomImage(this.width,this.height)
     image = circleImage(this.width,this.height,config.getString("grayscott.init.shape"))
     canvas = createGraphics(this.width, this.height, P3D)
-  }
-
-  def randomImage(width:Int,height:Int):PImage = {
-    val c = createGraphics(width,height,P3D)
-    c.beginDraw()
-    c.background(BG_COLOR)
-    for( i<-0 to width ) {
-      for( j<-0 to height ) {
-        random(0,5)
-        val color_ = color(random(30f,255f),random(0f,255f),125f)
-        c.set(i,j,color_)
-      }
-    }
-    for( i<-0 to width by 5 ) {
-      for( j<-0 to height by 5 ) {
-        //val color_ = color(random(0f,255f),random(0f,255f),60.0f)
-        val color_ = color(128f,64f,60.0f)
-        for( k<-0 until 3 ) {
-          for( l<-0 until 3 ) {
-            c.set(i+k-1,j+l-1,color_)
-          }
-        }
-      }
-    }
-    c.endDraw()
-    c.copy()
   }
 
   def circleImage(width:Int,height:Int,shape:String):PImage = {
@@ -130,7 +104,8 @@ class ShaderSketch() extends MusicVideoApplet(Some("shader_sketch.conf")) {
     }
     for( i<-0 until NUM_STEPS_PER_RENDER ) {
       canvas.beginDraw()
-      canvas.image(data, 0, 0, width, height)
+      val f = randomGaussian() / JITTER_SIGMA + 1.0;
+      canvas.image(data, 0, 0, (f*width).toInt, (f*height).toInt )
       canvas.endDraw()
       data = canvas.copy()
     }

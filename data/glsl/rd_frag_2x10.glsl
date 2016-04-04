@@ -22,13 +22,15 @@ uniform vec4 color10;
 
 void main()
 {
-    float value = texture2D(texture, vertTexCoord.st).g;
+    vec2 uv = texture2D(texture, vertTexCoord.st).rg;
+    float value = dot(uv,uv);
+    //float value =  texture2D(texture, vertTexCoord.st).g;
     float a2 = 1.0;
     vec3 col;
 
     if(value <= color1.a) {
         col = color1.rgb;
-        a2 = 0.8;
+        a2 = 0.7;
     } else if(value > color10.a) {
         col = color10.rgb;
         a2 = 0.5;

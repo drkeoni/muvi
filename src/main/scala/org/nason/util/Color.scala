@@ -51,7 +51,7 @@ object Color {
   @inline
   def palette( name:String, index:Int ) = {
     val colors = COLOR_BREWER(name)
-    colors(index % colors.length)
+    colors((index+colors.length)%colors.length)
   }
 
 }

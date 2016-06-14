@@ -17,7 +17,6 @@ object GrayScottSketch2 {
 }
 
 class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
-  //var physics: VerletPhysics = null
   var minim: Minim = null
   var song: AudioPlayer = null
   var blurTime:Int = 0
@@ -41,9 +40,6 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   val JITTER_SIGMA = confFloat("grayscott.jitter_sigma")
 
   override def setup(): Unit = {
-    //blurShader = loadShader(glsl("blur_softer.glsl"))
-    //physics = new VerletPhysics()
-
     minim = new Minim(this)
     song = minim.loadFile(SONG_FILE, config.getInt("song.bufferSize"))
     logger.info("Loaded song %s, song length is %.2f seconds".format(SONG_FILE, song.length() / 1000.0))
@@ -108,38 +104,6 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   }
 
   override def draw() = {
-    /*
-    if (first) {
-      canvas.shader(rdShaders(0))
-      canvas.beginDraw()
-      canvas.background(BG_COLOR)
-      canvas.textureMode(NORMAL)
-      canvas.beginShape()
-      canvas.texture(image)
-      canvas.vertex(0,0,0,0)
-      canvas.vertex(0,height,0,1)
-      canvas.vertex(width,height,1,1)
-      canvas.vertex(width,0,1,0)
-      canvas.endShape()
-      canvas.endDraw()
-      first = false
-      data = canvas.copy()
-      if ( config.getBoolean("grayscott.use_color_shader") )
-        shader(rdShaders(1))
-    }
-    for( i<-0 until NUM_STEPS_PER_RENDER ) {
-      canvas.beginDraw()
-      val f = randomGaussian() / JITTER_SIGMA + 1.0;
-      canvas.image(data, 0, 0, (f*width).toInt, (f*height).toInt )
-      canvas.endDraw()
-      data = canvas.copy()
-    }
-
-    val s = 1.0f
-
-    image(data,0,0,s*width,s*height)
-    */
-
     if (first) {
       canvas.shader(rdShaders(0))
       canvas.beginDraw()
@@ -170,7 +134,8 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
       data = canvas.copy()
     }
 
-    val s = random(0.995f,1.005f)+millis()/(5*60000.0f)
+    //val s = random(0.995f,1.005f)+millis()/(5*60000.0f)
+    val s = 1.0f
     image(data,width/2-s*CANVAS_WIDTH/2+random(0,3)-2,height/2-s*CANVAS_HEIGHT/2+random(0,3)-2,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
 
   }

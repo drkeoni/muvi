@@ -64,7 +64,8 @@ class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet with 
                        "cello" -> "cello_suite_no_5_prelude.mp3",
                        "140" -> "expt_140_mixdown_a.mp3",
                        "150" -> "expt_150_mixdown_c.mp3",
-                       "155" -> "expt_155_mixdown_a.mp3"
+                       "155" -> "expt_155_mixdown_a.mp3",
+                       "245" -> "expt_245_mixdown_b.mp3"
                      )
     .map( x => (x._1,data(x._2)) )
     .toMap

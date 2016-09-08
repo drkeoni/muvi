@@ -20,6 +20,8 @@ uniform float modOffset;
 uniform float feedLowMult;
 uniform float feedHighMult;
 
+uniform float velMult;
+
 float step_x = 1.0/screenWidth;
 float step_y = 1.0/screenHeight;
 float feed_low = feed*feedLowMult;
@@ -42,7 +44,7 @@ void main()
     vec2 r = vUv-0.5;
     float distsq = dot(r,r);
     float vel0 = cos(sqrt(distsq)*M_2PI/0.2);
-    vec2 vel = 2.0 * vel0 * vec2(-r.y,r.x);
+    vec2 vel = velMult * vel0 * vec2(-r.y,r.x);
 
     //vec2 vel = 0.01*vec2(-uv.x,uv.x);
 

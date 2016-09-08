@@ -46,7 +46,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     song.play(0)
 
     environment = new MusicVideoSystem(song)
-    listener = new Feeder()
+    listener = new Feeder(confFloat("sketch.mfcc_circles.outer_radius_factor"))
     environment.register(listener)
 
     createShaders()
@@ -70,6 +70,8 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
 
     rdShaders(0).set("feedLowMult",confFloat("grayscott.feed_low_mult"))
     rdShaders(0).set("feedHighMult",confFloat("grayscott.feed_high_mult"))
+
+    rdShaders(0).set("velMult",confFloat("grayscott.velocity_mult"))
 
     val alphas = config.getString("grayscott.alphas").split(",").map(s => s.toFloat)
     val intercept = config.getInt("grayscott.color_intercept")
@@ -140,7 +142,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
 
   }
 
-  class Feeder extends Agent {
+  class Feeder( bigCircleRadiusFactor:Float ) extends Agent {
     /**
       * Agents are objects in the system which care about the external environment surrounding the music
       * piece.
@@ -161,14 +163,14 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
       val theta = mfcc0 * 2.0 * PI / 12.0
       val ct = Math.cos(theta)
       val st = Math.sin(theta)
-      val x = (CANVAS_WIDTH/2 + CANVAS_WIDTH/4.0*ct).toInt
-      val y = (CANVAS_HEIGHT/2 + CANVAS_HEIGHT/4.0*st).toInt
+      val x = (CANVAS_WIDTH/2 + CANVAS_WIDTH*bigCircleRadiusFactor*ct).toInt
+      val y = (CANVAS_HEIGHT/2 + CANVAS_HEIGHT*bigCircleRadiusFactor*st).toInt
 
       canvas.beginDraw()
       canvas.image(data, 0, 0)
       val color_ = color(0,random(125,255),0)
       canvas.fill(color_)
-      val w = random(25,65).toInt
+      val w = random(25,165).toInt
       canvas.noStroke()
       canvas.ellipse(x-2,y+2,w+random(4,8),w+random(4,8))
       canvas.fill(color(0,random(125,255),0))

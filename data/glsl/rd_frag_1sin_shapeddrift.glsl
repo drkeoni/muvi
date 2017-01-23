@@ -2,6 +2,7 @@
 
 #define M_PI 3.1415926535897932384626433832795
 #define M_2PI 6.28318530718
+#define M_1_SQRT2 0.7071067811865476
 
 varying vec4 vertColor;
 varying vec4 vertTexCoord;
@@ -49,7 +50,7 @@ void main()
     float vel0 = cos(sqrt(distsq)*M_2PI/0.2);
     float cost = cos(driftMult*theta)*(1.0+0.1*sin(theta));
     float sint = sin(driftMult*theta)*(1.0+0.1*cos(theta));
-    vec2 vel = velMult * vel0 * vec2(cost*r.x+sint*r.y, -sint*r.x+cost*r.y);
+    vec2 vel = velMult * vel0 * ( M_1_SQRT2 * vec2(cost*r.x+sint*r.y, -sint*r.x+cost*r.y) + M_1_SQRT2 * vec2(-r.y,r.x) );
 
     //vec2 vel = velMult * vel0 * vec2(-r.y,r.x);
     //vec2 vel = 0.01*vec2(-uv.x,uv.x);

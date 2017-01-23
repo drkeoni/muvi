@@ -75,6 +75,7 @@ class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet with 
     .toMap
 
   override def settings(): Unit = {
+    fullScreen(P3D)
     size(config.getInt("sketch.width"),config.getInt("sketch.height"),P3D)
   }
 }

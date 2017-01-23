@@ -56,8 +56,8 @@ object Color {
     * @return tuple of r,g,b Ints
     */
   def hsv2rgb( h:Int, s:Int, v:Int ):Tuple3[Int,Int,Int] = {
-    val sf = s/100f
-    val vf = v/100f
+    val sf = (s%100)/100f
+    val vf = (v%100)/100f
 
     if (sf == 0f) {
       val vi = (vf * 255f).toInt
@@ -97,16 +97,36 @@ object Color {
       .map{ hsv:Tuple3[Float,Float,Float] => hsv2rgb(hsv._1.toInt,hsv._2.toInt,hsv._3.toInt) }
   }
 
+  /**
+    * Returns a palette of colors.  The special type HSV forms a linear palette of 10 colors
+    * using an underscore separated list of parameters corresponding to
+    * (H0,S0,V0) -> (H1,S1,V1)
+    * @param name
+    * @param index
+    * @return
+    */
   @inline
   def palette( name:String, index:Int ) = {
     val colors = name.startsWith("hsv") match {
       case true => {
         val components = name.split("_").toSeq.slice(1,7).map(_.toInt)
-        hsvSeries(components,9)
+        hsvSeries(components,10)
       }
       case false => COLOR_BREWER(name)
     }
     colors((index+2*colors.length)%colors.length)
   }
 
+  /**
+    * Return a series of colors based on the chosen palette
+    * @param name
+    * @param n
+    * @param intercept
+    * @param slope
+    * @return
+    */
+  def linearPalette( name:String, n:Int, intercept:Int, slope:Int ) : Seq[(Float,Float,Float)] = {
+    (0 until n).map( i => palette(name,intercept+i*slope) )
+               .map( c => ( c._1/255.0f, c._2/255.0f, c._3/255.0f ) )
+  }
 }

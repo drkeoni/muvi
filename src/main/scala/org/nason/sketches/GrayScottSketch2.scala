@@ -30,6 +30,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   var image:PImage = null
   var canvas:PGraphics = null
   var data:PImage = null
+  var filterFuncs: Seq[Unit=>Unit] = List[Unit=>Unit]()
 
   val SONG_FILE = songFiles(config.getString("song.name"))
   val BG_COLOR = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
@@ -54,6 +55,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     createShaders()
     image = circleImage(CANVAS_WIDTH,CANVAS_HEIGHT,config.getString("grayscott.init.shape"))
     canvas = createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT, P3D)
+    background(BG_COLOR)
   }
 
   def createShaders(): Unit = {
@@ -79,7 +81,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     val alphas = config.getString("grayscott.alphas").split(",").map(s => s.toFloat)
     val intercept = config.getInt("grayscott.color_intercept")
     val slope = config.getInt("grayscott.color_slope")
-    val colors = alphas.indices.map( i => palette(config.getString("grayscott.palette"),intercept-i*slope) ).map( c => ( c._1/255.0f, c._2/255.0f, c._3/255.0f ) )
+    val colors = linearPalette(config.getString("grayscott.palette"),alphas.length,intercept,slope)
 
     for(i<-alphas.indices) {
       val col = colors(i)
@@ -87,9 +89,20 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
       logger.info( "%s=%f,%f,%f,%f".format(name,col._1,col._2,col._3,alphas(i)))
       rdShaders(1).set(name,col._1,col._2,col._3,alphas(i))
     }
+
+    blurShader = loadShader(glsl("blur.glsl"))
+    filterFuncs = makeFilterFuncs(config.getString("sketch.filter_func"))
   }
 
   def circleImage(width:Int,height:Int,shape:String):PImage = {
+    //val g = createGraphics(this.width,this.height,P3D)
+    //g.beginDraw()
+    //g.background(255.0f)
+    //g.fill(255.0f)
+    //g.rect(0,0,this.width,this.height)
+    //g.endDraw()
+    //image(g,0,0)
+    //logger.info("creating graphics with %d,%d".format(this.width,this.height))
     val c = createGraphics(width,height,P3D)
     val drawShape = shape match {
       case "square" => (x:Int,y:Int,d:Int) => c.rect(x,y,d,d)
@@ -108,11 +121,29 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     c.copy()
   }
 
+  def makeFilterFuncs(filterTypes:String) : Seq[Unit=>Unit] = filterTypes.split("\\+").map(s=>makeFilterFunc(s))
+
+  def makeFilterFunc(filterType:String) : Unit=>Unit =
+    filterType.toLowerCase match {
+      case "none" => (Unit) => {}
+      case "blur" => (Unit) => filter(blurShader)
+      case "posterize2" => (Unit) => filter(POSTERIZE,2)
+      case "posterize3" => (Unit) => filter(POSTERIZE,3)
+      case "posterize4" => (Unit) => filter(POSTERIZE,4)
+      case "threshold" => (Unit) => filter(THRESHOLD)
+      case "gray" => (Unit) => filter(GRAY)
+      case "invert" => (Unit) => filter(INVERT)
+      case "erode" => (Unit) => filter(ERODE)
+      case "dilate" => (Unit) => filter(DILATE)
+      case _ => (Unit) => {}
+    }
+
   override def draw() = {
     if (first) {
+      //background(50f,50f,100f)
       canvas.shader(rdShaders(0))
       canvas.beginDraw()
-      canvas.background(BG_COLOR)
+      //canvas.background(BG_COLOR)
       canvas.textureMode(NORMAL)
       canvas.beginShape()
       canvas.texture(image)
@@ -130,7 +161,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     environment.update(millis() / 1000.0f)
 
     for( i<-0 until NUM_STEPS_PER_RENDER ) {
-      canvas.clear()
+      //canvas.clear()
       canvas.beginDraw()
       val f = randomGaussian() / JITTER_SIGMA * song.mix.level() * 5.0 + 1.0;
       //val f = 1.0f
@@ -144,9 +175,71 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     val s = 1.0f
     val randomX = random(0,MAX_IMAGE_JITTER) - MAX_IMAGE_JITTER/2
     val randomY = random(0,MAX_IMAGE_JITTER) - MAX_IMAGE_JITTER/2
-    image(data,width/2-s*CANVAS_WIDTH/2+randomX,height/2-s*CANVAS_HEIGHT/2+randomY,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
-
+    //image(data,width/2-s*CANVAS_WIDTH/2+randomX,height/2-s*CANVAS_HEIGHT/2+randomY,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
+    rotateY(-0.5f)
+    rotateZ(0.2f+millis()/(5*60000.0f))
+    translate(CANVAS_WIDTH,height/2-CANVAS_HEIGHT/2,millis()/1000.0f)
+    texturedCube(data,CANVAS_WIDTH)
+    //filter(blurShader)
+    //filter(POSTERIZE,3)
+    filterFuncs.foreach( _() )
   }
+
+  def texturedCube(tex:PImage,scale:Int) {
+    beginShape(QUADS)
+    texture(tex)
+    noStroke()
+    // Given one texture and six faces, we can easily set up the uv coordinates
+    // such that four of the faces tile "perfectly" along either u or v, but the other
+    // two faces cannot be so aligned.  This code tiles "along" u, "around" the X/Z faces
+    // and fudges the Y faces - the Y faces are arbitrarily aligned such that a
+    // rotation along the X axis will put the "top" of either texture at the "top"
+    // of the screen, but is not otherwised aligned with the X/Z faces. (This
+    // just affects what type of symmetry is required if you need seamless
+    // tiling all the way around the cube)
+
+    val s = scale
+    val s1 = -scale
+
+    // +Z "front" face
+    vertex(s1, s1,  s, 0, 0)
+    vertex( s, s1,  s, s, 0)
+    vertex( s,  s,  s, s, s)
+    vertex(s1,  s,  s, 0, s)
+
+    // -Z "back" face
+    vertex( s, s1, s1, 0, 0)
+    vertex(s1, s1, s1, s, 0)
+    vertex(s1,  s, s1, s, s)
+    vertex( s,  s, s1, 0, s)
+
+    // +Y "bottom" face
+    vertex(s1,  s,  s, 0, 0)
+    vertex( s,  s,  s, s, 0)
+    vertex( s,  s, s1, s, s)
+    vertex(s1,  s, s1, 0, s)
+
+    // -Y "top" face
+    vertex(s1, s1, s1, 0, 0)
+    vertex( s, s1, s1, s, 0)
+    vertex( s, s1,  s, s, s)
+    vertex(s1, s1,  s, 0, s)
+
+    // +X "right" face
+    vertex( s, s1,  s, 0, 0)
+    vertex( s, s1, s1, s, 0)
+    vertex( s,  s, s1, s, s)
+    vertex( s,  s,  s, 0, s)
+
+    // -X "left" face
+    vertex(s1, s1, s1, 0, 0)
+    vertex(s1, s1,  s, s, 0)
+    vertex(s1,  s,  s, s, s)
+    vertex(s1,  s, s1, 0, s)
+
+    endShape()
+  }
+
 
   class Feeder( config:Config ) extends Agent {
 

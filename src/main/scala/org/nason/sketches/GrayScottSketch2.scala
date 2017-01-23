@@ -1,10 +1,11 @@
 package org.nason.sketches
 
+import com.typesafe.config.Config
 import ddf.minim.{AudioPlayer, Minim}
-import org.nason.model.{VideoEvent, MusicVideoSystem, Agent, MusicVideoApplet}
+import org.nason.model.{Agent, MusicVideoApplet, MusicVideoSystem, VideoEvent}
 import org.nason.util.Color._
 import processing.core.PConstants._
-import processing.core.{PGraphics, PImage, PApplet}
+import processing.core.{PApplet, PGraphics, PImage}
 import processing.opengl.PShader
 
 import scala.collection.mutable.ArrayBuffer
@@ -38,6 +39,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   val CANVAS_HEIGHT = config.getInt("sketch.canvas.height")
   val NUM_STEPS_PER_RENDER = config.getInt("grayscott.num_steps_per_render")
   val JITTER_SIGMA = confFloat("grayscott.jitter_sigma")
+  val MAX_IMAGE_JITTER = config.getInt("sketch.canvas.max_jitter")
 
   override def setup(): Unit = {
     minim = new Minim(this)
@@ -46,7 +48,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     song.play(0)
 
     environment = new MusicVideoSystem(song)
-    listener = new Feeder(confFloat("sketch.mfcc_circles.outer_radius_factor"))
+    listener = new Feeder(config)
     environment.register(listener)
 
     createShaders()
@@ -72,6 +74,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     rdShaders(0).set("feedHighMult",confFloat("grayscott.feed_high_mult"))
 
     rdShaders(0).set("velMult",confFloat("grayscott.velocity_mult"))
+    rdShaders(0).set("driftMult",confFloat("grayscott.drift_mult"))
 
     val alphas = config.getString("grayscott.alphas").split(",").map(s => s.toFloat)
     val intercept = config.getInt("grayscott.color_intercept")
@@ -129,20 +132,39 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     for( i<-0 until NUM_STEPS_PER_RENDER ) {
       canvas.clear()
       canvas.beginDraw()
-      val f = randomGaussian() / JITTER_SIGMA + 1.0;
+      val f = randomGaussian() / JITTER_SIGMA * song.mix.level() * 5.0 + 1.0;
       //val f = 1.0f
-      canvas.image(data, 0, 0, (f*CANVAS_WIDTH).toInt, (f*CANVAS_HEIGHT).toInt )
+      canvas.image(data, ((0.5-0.5*f)*CANVAS_WIDTH).toInt, ((0.5-0.5*f)*CANVAS_HEIGHT).toInt,
+        (f*CANVAS_WIDTH).toInt, (f*CANVAS_HEIGHT).toInt )
       canvas.endDraw()
       data = canvas.copy()
     }
 
     //val s = random(0.995f,1.005f)+millis()/(5*60000.0f)
     val s = 1.0f
-    image(data,width/2-s*CANVAS_WIDTH/2+random(0,3)-2,height/2-s*CANVAS_HEIGHT/2+random(0,3)-2,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
+    val randomX = random(0,MAX_IMAGE_JITTER) - MAX_IMAGE_JITTER/2
+    val randomY = random(0,MAX_IMAGE_JITTER) - MAX_IMAGE_JITTER/2
+    image(data,width/2-s*CANVAS_WIDTH/2+randomX,height/2-s*CANVAS_HEIGHT/2+randomY,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
 
   }
 
-  class Feeder( bigCircleRadiusFactor:Float ) extends Agent {
+  class Feeder( config:Config ) extends Agent {
+
+    val bigCircleRadiusFactor = confFloat("sketch.mfcc_circles.outer_radius_factor")
+    val minR = config.getInt("sketch.mfcc_circles.min_color.r")
+    val minG = config.getInt("sketch.mfcc_circles.min_color.g")
+    val minB = config.getInt("sketch.mfcc_circles.min_color.b")
+    val maxR = config.getInt("sketch.mfcc_circles.max_color.r")
+    val maxG = config.getInt("sketch.mfcc_circles.max_color.g")
+    val maxB = config.getInt("sketch.mfcc_circles.max_color.b")
+
+    var r0:Int = 0
+    var r1:Int = 0
+    var g0:Int = 125
+    var g1:Int = 125
+    var b0:Int = 0
+    var b1:Int = 0
+
     /**
       * Agents are objects in the system which care about the external environment surrounding the music
       * piece.
@@ -168,12 +190,18 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
 
       canvas.beginDraw()
       canvas.image(data, 0, 0)
-      val color_ = color(0,random(125,255),0)
+      r0 += (0.02 * ( random(minR,maxR) - r0 )).toInt
+      g0 += (0.02 * ( random(minG,maxG) - g0 )).toInt
+      b0 += (0.02 * ( random(minB,maxB) - b0 )).toInt
+      val color_ = color(r0,g0,b0)
       canvas.fill(color_)
       val w = random(25,165).toInt
       canvas.noStroke()
       canvas.ellipse(x-2,y+2,w+random(4,8),w+random(4,8))
-      canvas.fill(color(0,random(125,255),0))
+      r1 += (0.02 * ( random(minR,maxR) - r1 )).toInt
+      g1 += (0.02 * ( random(minG,maxG) - g1 )).toInt
+      b1 += (0.02 * ( random(minB,maxB) - b1 )).toInt
+      canvas.fill(color(r1,g1,b1))
       canvas.ellipse(x,y,w,w)
       canvas.fill(color_)
       canvas.pushMatrix()

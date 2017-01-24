@@ -23,6 +23,16 @@ JVM language.
 
 ![screenshot of GrayScottSketch2](/data/images/grayscott_example_01.png)
 
+This sketch generates a video by solving a Gray-Scott reaction-diffusion _plus_ drift system
+and displaying the
+resulting concentrations as colors. The resulting videos exhibit
+a lot of flexibility made possible by
+using different
+GLSL shaders, colors, filters, PDE parameters, 
+camera parameters, and drift parameters.
+
+A live example of this sketch with accompanying music can be found [here.](https://youtu.be/TB2K7XTwpBE)
+
 ## Architecture
 
 Over time a modular and reusable architecture has been forming in this code base.  The main

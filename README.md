@@ -1,6 +1,6 @@
 # muvi
 
-![screenshot of VinylSketch2](/data/images/vinyl_example_01.png)
+![screenshot of VinylSketch2](/data/images/vinyl_example_01_medium.png)
 
 The muvi code base is a home project to explore generative video production
 based on music that I've been writing in the last few years.  The tech

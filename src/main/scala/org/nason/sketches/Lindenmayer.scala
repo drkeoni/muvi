@@ -29,9 +29,7 @@ class Lindenmayer extends MusicVideoApplet(Some("sketch3.conf")) {
   val BLUR_TIME = config.getInt("sketch.blurTime")
 
   override def setup() : Unit = {
-    size(config.getInt("sketch.width"),config.getInt("sketch.height"),P3D)
-
-    blurShader = loadShader(data("blur.glsl"))
+    blurShader = loadShader(glsl("blur.glsl"))
 
     minim = new Minim(this)
     song = minim.loadFile(SONG_FILE, config.getInt("song.bufferSize"))
@@ -39,10 +37,8 @@ class Lindenmayer extends MusicVideoApplet(Some("sketch3.conf")) {
     song.play(0)
 
     lsystem = LSystem.createFromConfig(config)
-    logger.info( "Created rule %s".format(lsystem.rule) )
-
-    lsystem.agent.initialize(new Vec3D(0.0f,0.0f,0.0f),10,new Vec3D(1.0f,0.0f,0.1f))
     logger.info("Initialized agent at %s".format(lsystem.agent))
+    logger.info( "Created rule %s".format(lsystem.rule) )
 
     environment = new MusicVideoSystem(song)
   }

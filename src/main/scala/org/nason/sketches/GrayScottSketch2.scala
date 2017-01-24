@@ -42,6 +42,12 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   val JITTER_SIGMA = confFloat("grayscott.jitter_sigma")
   val MAX_IMAGE_JITTER = config.getInt("sketch.canvas.max_jitter")
 
+  val CAMERA_Y_ANG_VEL = confFloat("sketch.camera.ang_vel.y")
+  val CAMERA_Z_ANG_VEL = confFloat("sketch.camera.ang_vel.z")
+  val CAMERA_X_VEL = confFloat("sketch.camera.vel.x")
+  val CAMERA_Y_VEL = confFloat("sketch.camera.vel.y")
+  val CAMERA_Z_VEL = confFloat("sketch.camera.vel.z")
+
   override def setup(): Unit = {
     minim = new Minim(this)
     song = minim.loadFile(SONG_FILE, config.getInt("song.bufferSize"))
@@ -176,12 +182,16 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     val randomX = random(0,MAX_IMAGE_JITTER) - MAX_IMAGE_JITTER/2
     val randomY = random(0,MAX_IMAGE_JITTER) - MAX_IMAGE_JITTER/2
     //image(data,width/2-s*CANVAS_WIDTH/2+randomX,height/2-s*CANVAS_HEIGHT/2+randomY,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
-    rotateY(-0.5f)
-    rotateZ(0.2f+millis()/(5*60000.0f))
-    translate(CANVAS_WIDTH,height/2-CANVAS_HEIGHT/2,millis()/1000.0f)
+
+    //
+    // place the rxtn-diffusion image on a cube
+
+    val t = millis()/1000f
+
+    translate(CANVAS_WIDTH+t*CAMERA_X_VEL,height/2-CANVAS_HEIGHT/2+t*CAMERA_Y_VEL,500+t*CAMERA_Z_VEL)
+    rotateY(-0.5f+t*CAMERA_Y_ANG_VEL)
+    rotateZ(0.2f+t*CAMERA_Z_ANG_VEL)
     texturedCube(data,CANVAS_WIDTH)
-    //filter(blurShader)
-    //filter(POSTERIZE,3)
     filterFuncs.foreach( _() )
   }
 

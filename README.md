@@ -19,6 +19,8 @@ JVM language.
 
 ### GrayScottSketch2
 
+![screenshot of GrayScottSketch2](/data/images/grayscott_example_01.png)
+
 ## Architecture
 
 Over time a modular and reusable architecture has been forming in this code base.  The main

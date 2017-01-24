@@ -11,6 +11,8 @@ JVM language.
 
 ### Lindenmayer
 
+![screenshot of Lindenmayer](/data/images/lindenmayer_example_01.png)
+
 ### SnowFall
 
 ### VinylSketch2

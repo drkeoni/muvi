@@ -16,8 +16,21 @@ object VinylSketch2 {
 }
 
 /**
- * Created by Jon on 12/20/2015.
- */
+  * The basic concept behind this sketch is the drawing of a 3D Lissajous-like image using
+  * inputs from the musical signal to control some of the values of the graphics.  An attractor
+  * is set at the middle of the image (1/r attraction?) and a pen is set in motion at the top of
+  * the screen.
+  *
+  * The color of the pen is set by the largest MFCC coefficient during that frame.
+  * The radius of the pen is set by the volume level.
+  *
+  * The image can be adjusted by changing the initial velocity of the pen, the attractor strength,
+  * the temperature of the brownian bath (aka gaussian noise added to velocity), and the friction coefficient.
+  *
+  * Progressive blurring during the drawing is applied to create a depth-of-focus effect.
+  *
+  * Created by Jon on 12/20/2015.
+  */
 class VinylSketch2() extends MusicVideoApplet(Some("sketch2.conf")) {
   var physics:VerletPhysics = null
   var minim:Minim = null

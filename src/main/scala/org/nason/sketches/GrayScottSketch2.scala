@@ -11,6 +11,12 @@ import processing.opengl.PShader
 import scala.collection.mutable.ArrayBuffer
 
 /**
+  * Generates a video by solving a Gray-Scott reaction-diffusion system and displaying the
+  * resulting concentrations as colors.
+  *
+  * There's a lot of flexibility in the possibilities of these sketches using different
+  * shaders, colors, filters, PDE parameters, camera parameters, and drift parameters.
+  *
   * Created by Jon on 4/3/2016.
   */
 object GrayScottSketch2 {
@@ -47,6 +53,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   val CAMERA_X_VEL = confFloat("sketch.camera.vel.x")
   val CAMERA_Y_VEL = confFloat("sketch.camera.vel.y")
   val CAMERA_Z_VEL = confFloat("sketch.camera.vel.z")
+  val USE_BOX = config.getBoolean("sketch.draw_in_box")
 
   override def setup(): Unit = {
     minim = new Minim(this)
@@ -101,14 +108,6 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   }
 
   def circleImage(width:Int,height:Int,shape:String):PImage = {
-    //val g = createGraphics(this.width,this.height,P3D)
-    //g.beginDraw()
-    //g.background(255.0f)
-    //g.fill(255.0f)
-    //g.rect(0,0,this.width,this.height)
-    //g.endDraw()
-    //image(g,0,0)
-    //logger.info("creating graphics with %d,%d".format(this.width,this.height))
     val c = createGraphics(width,height,P3D)
     val drawShape = shape match {
       case "square" => (x:Int,y:Int,d:Int) => c.rect(x,y,d,d)
@@ -146,10 +145,8 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
 
   override def draw() = {
     if (first) {
-      //background(50f,50f,100f)
       canvas.shader(rdShaders(0))
       canvas.beginDraw()
-      //canvas.background(BG_COLOR)
       canvas.textureMode(NORMAL)
       canvas.beginShape()
       canvas.texture(image)
@@ -177,24 +174,25 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
       data = canvas.copy()
     }
 
-    //val s = random(0.995f,1.005f)+millis()/(5*60000.0f)
-    val s = 1.0f
     val randomX = random(0,MAX_IMAGE_JITTER) - MAX_IMAGE_JITTER/2
     val randomY = random(0,MAX_IMAGE_JITTER) - MAX_IMAGE_JITTER/2
-    //image(data,width/2-s*CANVAS_WIDTH/2+randomX,height/2-s*CANVAS_HEIGHT/2+randomY,s*CANVAS_WIDTH,s*CANVAS_HEIGHT)
 
     //
     // place the rxtn-diffusion image on a cube
 
-    val t = millis()/1000f
-
-    translate(CANVAS_WIDTH+t*CAMERA_X_VEL,height/2-CANVAS_HEIGHT/2+t*CAMERA_Y_VEL,500+t*CAMERA_Z_VEL)
-    rotateY(-0.5f+t*CAMERA_Y_ANG_VEL)
-    rotateZ(0.2f+t*CAMERA_Z_ANG_VEL)
-    texturedCube(data,CANVAS_WIDTH)
+    if (USE_BOX) {
+      val t = millis() / 1000f
+      translate(CANVAS_WIDTH + t * CAMERA_X_VEL + randomX, height / 2 - CANVAS_HEIGHT / 2 + t * CAMERA_Y_VEL + randomY, 500 + t * CAMERA_Z_VEL)
+      rotateY(-0.5f + t * CAMERA_Y_ANG_VEL)
+      rotateZ(0.2f + t * CAMERA_Z_ANG_VEL)
+      texturedCube(data, CANVAS_WIDTH)
+    } else {
+      image(data,width/2-CANVAS_WIDTH/2+randomX,height/2-CANVAS_HEIGHT/2+randomY,CANVAS_WIDTH+2*randomX,CANVAS_HEIGHT+2*randomY)
+    }
     filterFuncs.foreach( _() )
   }
 
+  /** modified from the example at https://processing.org/examples/texturecube.html */
   def texturedCube(tex:PImage,scale:Int) {
     beginShape(QUADS)
     texture(tex)

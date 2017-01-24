@@ -11,7 +11,7 @@ JVM language.
 
 ### Lindenmayer
 
-![screenshot of Lindenmayer](/data/images/lindenmayer_example_01.png)
+![screenshot of Lindenmayer](/data/images/lindenmayer_example_01_medium.png)
 
 ### SnowFall
 

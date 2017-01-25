@@ -26,7 +26,7 @@ volume, among other musical elements.
 
 In VinylSketch2, the pen is gravitationally attracted to the middle of the image, but free to
 move, buffeted by temperature and volume boosts.  The color of the pen is set by the 
-current largest MFCC coefficient (see [below](#Architecture)).  With some probability, "baby" pens are shot out
+current largest MFCC coefficient (see [below](#architecture)).  With some probability, "baby" pens are shot out
 from the main pen, and they meander along, drawing their own lines in their own
 palette, and also responding to MFCC coefficients and volume.  Most sketches are drawn with
 a progressive blur effect which simulates the action of a DSLR camera.

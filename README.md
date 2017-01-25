@@ -19,6 +19,18 @@ JVM language.
 
 ![screenshot of VinylSketch2](/data/images/vinyl_example_05.png)
 
+The "Vinyl" series of sketches were inspired initially by a generative music video applet
+called [polartone.](http://mattdesl.github.io/polartone/)  Although it's fair to say that
+the only thing in common at this point is the idea of a dynamically moving pen, responding to
+volume, among other musical elements.  
+
+In VinylSketch2, the pen is gravitationally attracted to the middle of the image, but free to
+move, buffeted by temperature and volume boosts.  The color of the pen is set by the 
+current largest MFCC coefficient (see [below](#Architecture)).  With some probability, "baby" pens are shot out
+from the main pen, and they meander along, drawing their own lines in their own
+palette, and also responding to MFCC coefficients and volume.  Most sketches are drawn with
+a progressive blur effect which simulates the action of a DSLR camera.
+
 ### GrayScottSketch2
 
 ![screenshot of GrayScottSketch2](/data/images/grayscott_example_01.png)
@@ -29,14 +41,15 @@ resulting concentrations as colors. The resulting videos exhibit
 a lot of flexibility made possible by
 using different
 GLSL shaders, colors, filters, PDE parameters, 
-camera parameters, and drift parameters.
+camera parameters, and drift parameters.  The available shaders can be found in the `/data/glsl`
+folder.
 
 A live example of this sketch with accompanying music can be found [here.](https://youtu.be/TB2K7XTwpBE)
 
 ## Architecture
 
-Over time a modular and reusable architecture has been forming in this code base.  The main
-technology stack is the processing 3 library, supported usually by libraries from the toxiclibs
+A modular and reusable architecture has been slowly evolving in this code base.  The main
+technology stack is the Processing 3 library, supported usually by libraries from the toxiclibs
 and minim projects.  
 
 All of the processing applets implement the trait `MusicVideoApplet` which provides support for
@@ -54,9 +67,18 @@ The drawing action of an `Agent` is completely up to the sketch.
 
 All of the music and code found here was created by Jon Sorenson and is licensed under a
 [Creative Commons License.](https://creativecommons.org/licenses/)
+
 The original inspiration for VinylSketch2 came from the javascript applet
-[spins.](http://mattdesl.github.io/spins/) The original GLSL shader code for
+[polartone.](http://mattdesl.github.io/polartone/)
+
+The original GLSL shader code for
 solving and plotting the Gray-Scott reaction-diffusion 
-equations came from [here.](https://github.com/pmneila/jsexp)
+equations came from [here.](https://github.com/pmneila/jsexp)  
+
+The Processing 3 library can be found [here.](https://processing.org)
+
+The toxiclibs library can be found [here.](http://toxiclibs.org)
+
+The minim library can be found [here.](http://code.compartmental.net/tools/minim/)
 
 CC by Jon Sorenson &copy;2017

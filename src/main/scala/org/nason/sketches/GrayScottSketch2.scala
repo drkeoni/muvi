@@ -48,6 +48,9 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   val JITTER_SIGMA = confFloat("grayscott.jitter_sigma")
   val MAX_IMAGE_JITTER = config.getInt("sketch.canvas.max_jitter")
 
+  val CAMERA_X0 = confFloat("sketch.camera.x0.x")
+  val CAMERA_Y0 = confFloat("sketch.camera.x0.y")
+  val CAMERA_Z0 = confFloat("sketch.camera.x0.z")
   val CAMERA_Y_ANG_VEL = confFloat("sketch.camera.ang_vel.y")
   val CAMERA_Z_ANG_VEL = confFloat("sketch.camera.ang_vel.z")
   val CAMERA_X_VEL = confFloat("sketch.camera.vel.x")
@@ -182,7 +185,9 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
 
     if (USE_BOX) {
       val t = millis() / 1000f
-      translate(CANVAS_WIDTH + t * CAMERA_X_VEL + randomX, height / 2 - CANVAS_HEIGHT / 2 + t * CAMERA_Y_VEL + randomY, 500 + t * CAMERA_Z_VEL)
+      translate(CANVAS_WIDTH + t * CAMERA_X_VEL + randomX + CAMERA_X0,
+                height / 2 - CANVAS_HEIGHT / 2 + t * CAMERA_Y_VEL + randomY + CAMERA_Y0,
+                CAMERA_Z0 + t * CAMERA_Z_VEL)
       rotateY(-0.5f + t * CAMERA_Y_ANG_VEL)
       rotateZ(0.2f + t * CAMERA_Z_ANG_VEL)
       texturedCube(data, CANVAS_WIDTH)

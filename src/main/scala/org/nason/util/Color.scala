@@ -63,7 +63,7 @@ object Color {
       val vi = (vf * 255f).toInt
       (vi, vi, vi)
     } else {
-      val hf = h / 60f
+      val hf = (h%360) / 60f
       val hi = Math.floor(hf).toFloat
       val f = hf - hi
       val p = vf * (1f - sf)

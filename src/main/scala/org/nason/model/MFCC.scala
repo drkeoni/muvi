@@ -66,8 +66,9 @@ class MfccCalculator( minFreq:Float, maxFreq:Float, n:Int, nfft:Int, sampleRate:
    */
   def calculateCoefficients( spectrum:IndexedSeq[Float] ) : Array[Float] = {
     // the FFT spectrum is absolute, not squared, so square it to get power
-    val s = spectrum.map(x=>x*x)
-    val p = calculateMelLogPower(s)
+    //val s = spectrum.map(x=>x*x)
+    // 01/26/2017 - moved the precomputed squares into calculateMelLogPower to speed up operations
+    val p = calculateMelLogPower(spectrum)
     // take DCT
     // see below, originally was written as map + sum; faster to foldLeft
     val coeffs = (0 until n).map( k => (0 until n).foldLeft(0.0)( (s,i) => s + p(i) * cosWeights(i)(k) ).toFloat )
@@ -79,12 +80,12 @@ class MfccCalculator( minFreq:Float, maxFreq:Float, n:Int, nfft:Int, sampleRate:
     calculateCoefficients(s)
   }
 
-  /** Applies Mel filterbanks to the power spectrum and returns the energy in each filter bank. */
-  private def calculateMelLogPower(powerSpectrum:IndexedSeq[Float]):IndexedSeq[Double] = {
+  /** Applies Mel filterbanks to the absolute spectrum and returns the energy in each filter bank. */
+  private def calculateMelLogPower(rawSpectrum:IndexedSeq[Float]):IndexedSeq[Double] = {
     val js = 0 until nfft
     // I originally wrote the following
     //( 0 until n ).map( i => Math.log( js.map( j => powerSpectrum(j) * filterbanks(i)(j) ).sum ))
     // Combining operations into a single fold sped up the operations ~35%
-    ( 0 until n ).map( i => Math.log( js.foldLeft(0.0)( (s,j) => s + powerSpectrum(j) * filterbanks(i)(j) ) ))
+    ( 0 until n ).map( i => Math.log( js.foldLeft(0.0)( (s,j) => s + rawSpectrum(j)*rawSpectrum(j)*filterbanks(i)(j) ) ))
    }
 }

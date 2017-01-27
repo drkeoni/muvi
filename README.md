@@ -44,7 +44,8 @@ GLSL shaders, colors, filters, PDE parameters,
 camera parameters, and drift parameters.  The available shaders can be found in the `/data/glsl`
 folder.
 
-A live example of this sketch with accompanying music can be found [here.](https://youtu.be/TB2K7XTwpBE)
+A live example of this sketch with accompanying music can be found [here](https://youtu.be/TB2K7XTwpBE)
+or [here.](https://www.youtube.com/watch?v=zlwOMv0-NEE)
 
 ## Architecture
 

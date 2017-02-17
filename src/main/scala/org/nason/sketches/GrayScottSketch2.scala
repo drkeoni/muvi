@@ -45,7 +45,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
   val CANVAS_WIDTH = config.getInt("sketch.canvas.width")
   val CANVAS_HEIGHT = config.getInt("sketch.canvas.height")
   val NUM_STEPS_PER_RENDER = config.getInt("grayscott.num_steps_per_render")
-  val JITTER_SIGMA = confFloat("grayscott.jitter_sigma")
+  val JITTER_PRECISION = confFloat("grayscott.jitter_precision")
   val MAX_IMAGE_JITTER = config.getInt("sketch.canvas.max_jitter")
 
   val CAMERA_X0 = confFloat("sketch.camera.x0.x")
@@ -169,7 +169,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
     for( i<-0 until NUM_STEPS_PER_RENDER ) {
       //canvas.clear()
       canvas.beginDraw()
-      val f = randomGaussian() / JITTER_SIGMA * song.mix.level() * 5.0 + 1.0;
+      val f = randomGaussian() / JITTER_PRECISION * song.mix.level() * 5.0 + 1.0;
       //val f = 1.0f
       canvas.image(data, ((0.5-0.5*f)*CANVAS_WIDTH).toInt, ((0.5-0.5*f)*CANVAS_HEIGHT).toInt,
         (f*CANVAS_WIDTH).toInt, (f*CANVAS_HEIGHT).toInt )
@@ -182,7 +182,7 @@ class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
 
     //
     // place the rxtn-diffusion image on a cube
-
+    //
     if (USE_BOX) {
       val t = millis() / 1000f
       translate(CANVAS_WIDTH + t * CAMERA_X_VEL + randomX + CAMERA_X0,

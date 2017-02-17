@@ -1,10 +1,9 @@
 package org.nason.model
 
-import com.typesafe.scalalogging.LazyLogging
-import ddf.minim.analysis.{HammingWindow, WindowFunction, FFT}
+import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
+import ddf.minim.analysis._
 
 import scala.collection.mutable.ListBuffer
-
 import ddf.minim.{AudioPlayer, Minim}
 
 object MusicVideoSystem {
@@ -14,23 +13,33 @@ object MusicVideoSystem {
 /**
  * Created by Jon on 8/19/2015.
  */
-class MusicVideoSystem(song:AudioPlayer) extends LazyLogging {
-  val agents = ListBuffer[Agent]()
-  val fftWindow : WindowFunction = new HammingWindow()
-  val fft = {
+class MusicVideoSystem(song:AudioPlayer, fftWindowName:String="Hamming") extends StrictLogging {
+  private val agents = ListBuffer[Agent]()
+
+  private val fftWindow : WindowFunction = fftWindowName match {
+    case "BartlettHann" => new BartlettHannWindow()
+    case "Bartlett" => new BartlettWindow()
+    case "Gauss" => new GaussWindow()
+    case "Hamming" => new HammingWindow()
+    case "Hann" => new HannWindow()
+    case "Lanczos" => new LanczosWindow()
+    case "Triangular" => new TriangularWindow()
+    case _ => new HammingWindow()
+  }
+  private val fft = {
     val _f = new FFT(song.bufferSize(), song.sampleRate())
     _f.window(fftWindow)
     _f
   }
 
   /** logarithmically spaced frequency bands */
-  val bands = {
+  private val bands = {
     val delta = Math.log(fft.specSize())/MusicVideoSystem.TARGET_NUM_BANDS.toFloat
     for( i <- 0.0 to Math.log(fft.specSize) by delta )
       yield Math.exp(i).toInt
   }
 
-  val mfccCalculator = {
+  private val mfccCalculator = {
     logger.info("Initializing MfccCalculator(%f,%f,%d,%d,%f)".format(20.0f, 10000.0f, 26, fft.specSize(), song.sampleRate()))
     new MfccCalculator( 20.0f, 10000.0f, 26, fft.specSize(), song.sampleRate() )
   }

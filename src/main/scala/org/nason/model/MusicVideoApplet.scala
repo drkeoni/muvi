@@ -3,8 +3,9 @@ package org.nason.model
 import java.io.File
 import javafx.stage.Screen
 
-import com.typesafe.config.{Config,ConfigFactory}
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.Logger
+import org.slf4j.LoggerFactory
 import processing.core.PApplet
 import processing.core.PConstants
 import processing.core.PConstants._
@@ -30,7 +31,9 @@ object MusicVideoApplet {
   *
   * 10/8/2015.
  */
-class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet with LazyLogging {
+class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet {
+  protected val logger = LoggerFactory.getLogger(getClass.getName)
+
   var environment: MusicVideoSystem = null
 
   val CLASS_PATH:String = MusicVideoApplet.getClass.getProtectionDomain.getCodeSource.getLocation.getPath

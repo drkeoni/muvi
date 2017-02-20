@@ -23,7 +23,7 @@ object GrayScottSketch2 {
   def main(args: Array[String]) = PApplet.runSketch( Array[String]("GrayScottSketch2"), new GrayScottSketch2() )
 }
 
-class GrayScottSketch2() extends MusicVideoApplet(Some("gs2_sketch.conf")) {
+class GrayScottSketch2() extends MusicVideoApplet(Some("gs2/gs2_sketch.conf")) {
   var minim: Minim = null
   var song: AudioPlayer = null
   var blurTime:Int = 0

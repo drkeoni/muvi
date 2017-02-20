@@ -1,10 +1,10 @@
 package org.nason.model
 
-import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
 import ddf.minim.analysis._
 
 import scala.collection.mutable.ListBuffer
 import ddf.minim.{AudioPlayer, Minim}
+import org.slf4j.LoggerFactory
 
 object MusicVideoSystem {
   val TARGET_NUM_BANDS=65
@@ -13,7 +13,9 @@ object MusicVideoSystem {
 /**
  * Created by Jon on 8/19/2015.
  */
-class MusicVideoSystem(song:AudioPlayer, fftWindowName:String="Hamming") extends StrictLogging {
+class MusicVideoSystem(song:AudioPlayer, fftWindowName:String="Hamming") {
+  protected val logger = LoggerFactory.getLogger(getClass.getName)
+
   private val agents = ListBuffer[Agent]()
 
   private val fftWindow : WindowFunction = fftWindowName match {

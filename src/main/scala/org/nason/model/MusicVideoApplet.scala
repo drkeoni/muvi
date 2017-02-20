@@ -38,12 +38,13 @@ class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet {
 
   val CLASS_PATH:String = MusicVideoApplet.getClass.getProtectionDomain.getCodeSource.getLocation.getPath
   val DATA_PATH:String = new File(List(CLASS_PATH, "..", "..", "..", "data").mkString(File.separator)).getCanonicalPath
-  def data(s:String) = DATA_PATH + File.separator + s
-  def glsl(s:String) = data("glsl" + File.separator + s)
-  def configFile(s:String) = new File(DATA_PATH + File.separator + "config" + File.separator + s)
+  def data(s:String):String = DATA_PATH + File.separator + s
+  def glsl(s:String):String = data("glsl" + File.separator + s)
+  def musicFile(s:String):String = data("music"+File.separator+s)
+  def configFile(s:String):File = new File(data("config"+File.separator+s))
 
   val config:Config = configFilePath.map(p=>ConfigFactory.parseFile(configFile(p))).getOrElse(ConfigFactory.empty())
-  def confFloat(s:String) = config.getDouble(s).toFloat
+  def confFloat(s:String):Float = config.getDouble(s).toFloat
 
   val BLEND_MODE_TO_INT: Map[String, Int] = Map(
     "blend" -> PConstants.BLEND,
@@ -74,7 +75,7 @@ class MusicVideoApplet(configFilePath:Option[String]=None) extends PApplet {
                        "266" -> "expt_266_mixdown_b.mp3",
                        "ne" -> "ne.mp3"
                      )
-    .map( x => (x._1,data(x._2)) )
+    .map( x => (x._1,musicFile(x._2)) )
     .toMap
 
   override def settings(): Unit = {

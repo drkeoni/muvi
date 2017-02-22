@@ -84,7 +84,7 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
     var currentGoal:Array[Int] = Array.fill[Int](NUM_GROUPS)(0)
     val GOALS = (0 until 12).map( i => {
       val th = Math.PI * 2.0 * i / 12.0
-      new Vec3D((800.0*Math.cos(th)).toFloat,(300.0*Math.sin(th)).toFloat,0f)
+      new Vec3D((1600.0*Math.cos(th)).toFloat,(300.0*Math.sin(th)).toFloat,0f)
     })
 
     val groups = (0 until NUM_GROUPS).map( i => new BoidsGroup(i) )
@@ -182,10 +182,13 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
         //
         // obstacle
         //
-        val ly0 = new Vec3D(-190,0,0)
-        val ly1 = new Vec3D(190,0,0)
+        val ly0 = new Vec3D(60,190,0)
+        val ly1 = new Vec3D(60,-190,0)
+        val ly2 = new Vec3D(-40,-190,0)
+        val ly3 = new Vec3D(-40,190,0)
         boids.foreach( b => {
           b.avoidLine(ly0, ly1, 4*BIRD_SIZE * BIRD_SIZE, WALL_FACTOR )
+          b.avoidLine(ly2, ly3, 4*BIRD_SIZE * BIRD_SIZE, WALL_FACTOR )
         })
         //
         // alignment
@@ -196,6 +199,15 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
           val deltav = cv.scale(1f/b.neighbors.length.toFloat).sub(b.mass.getVelocity).normalize
           b.mass.addVelocity( deltav.scale(r3factor) )
         })
+
+        //
+        // RESCALE
+        //
+        boids.foreach( b => {
+          val vf = b.mass.getVelocity.magnitude
+          b.mass.scaleVelocity( 1.0f/vf )
+        })
+
         //
         // bath fluctuations
         //
@@ -203,13 +215,6 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
           val vx = randomGaussian() * temperature
           val vy = randomGaussian() * temperature
           b.mass.addVelocity(new Vec3D(vx, vy, 0f))
-        })
-        //
-        // RESCALE
-        //
-        boids.foreach( b => {
-          val vf = b.mass.getVelocity.magnitude
-          b.mass.scaleVelocity( 1.0f/vf )
         })
       }
 
@@ -251,7 +256,10 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
       //fill(color(220,180,30),200f)
       fill(OBSTACLE_COLOR,200f)
       noStroke()
-      rect(-200,-10,400,20)
+      //rect(-200,-10,400,20)
+      //rect(-10,-200,20,400)
+      rect(-50,-200,20,400)
+      rect(50,-200,20,400)
 
       //fill(color(220,180,255),200f)
       //val goal = GOALS(currentGoal)
@@ -279,8 +287,12 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
       val (x3,y3) = (mass.x-0.5*BIRD_SIZE*v.x,mass.y-0.5*BIRD_SIZE*v.y)
       val (x1,y1) = (x3-0.5*BIRD_SIZE*v.y,y3+0.5*BIRD_SIZE*v.x)
       val (x2,y2) = (x3+0.5*BIRD_SIZE*v.y,y3-0.5*BIRD_SIZE*v.x)
+      val (x4,y4) = (mass.x-3*BIRD_SIZE*v.x,mass.y-3*BIRD_SIZE*v.y)
       noStroke()
       triangle(x0.toInt,y0.toInt,x2.toInt,y2.toInt,x1.toInt,y1.toInt)
+      triangle(x4.toInt,y4.toInt,x2.toInt,y2.toInt,x1.toInt,y1.toInt)
+      stroke(color(255.0f),80.0f)
+      line(x0,y0,x4,y4)
       //logger.info("drawing at (%d,%d,%d,%d,%d,%d)".format(x0.toInt,y0.toInt,x2.toInt,y2.toInt,x1.toInt,y1.toInt))
     }
 

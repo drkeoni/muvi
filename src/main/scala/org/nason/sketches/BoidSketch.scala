@@ -5,6 +5,7 @@ import org.nason.model.{Agent, MusicVideoApplet, MusicVideoSystem, VideoEvent}
 import org.nason.util.Color
 import processing.core.PApplet
 import toxi.geom.Vec3D
+import toxi.physics.behaviors.AttractionBehavior
 import toxi.physics.{VerletParticle, VerletPhysics}
 
 import scala.collection.mutable.ArrayBuffer
@@ -81,147 +82,15 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
 
   class BoidsManager(physics:VerletPhysics) extends Agent {
 
-    var currentGoal:Array[Int] = Array.fill[Int](NUM_GROUPS)(0)
-    val GOALS = (0 until 12).map( i => {
+    val goals = (0 until 12).map( i => {
       val th = Math.PI * 2.0 * i / 12.0
-      new Vec3D((1600.0*Math.cos(th)).toFloat,(300.0*Math.sin(th)).toFloat,0f)
+      val center = new Vec3D((1000.0*Math.cos(th)).toFloat,(600.0*Math.sin(th)).toFloat,0f)
+      new BoidGoal( center.x.toInt, center.y.toInt, 0, 0, NUM_GROUPS, false )
     })
 
     val groups = (0 until NUM_GROUPS).map( i => new BoidsGroup(i) )
 
-    class BoidsGroup(id:Int) {
-      val boids:Array[Boid] = {
-        val _b = new ArrayBuffer[Boid]()
-        val nPalette = if (COLOR_BY_GROUP) NUM_GROUPS else NUM_BOIDS
-        val palette = Color.hsvSeries(Seq(PALETTE_MINH,PALETTE_MAXH,PALETTE_MINS,
-          PALETTE_MAXS,PALETTE_MINV,PALETTE_MAXV),nPalette).map( c => color(c._1,c._2,c._3) )
-
-        for( i <-0 until NUM_BOIDS ) {
-          val (bx, by) = (random(START_MINX,START_MAXX), random(START_MINY,START_MAXY))
-          val (vx, vy) = (random(START_MINVX,START_MAXVX), random(START_MINVX,START_MAXVX))
-          val j = if (COLOR_BY_GROUP) id else i
-          _b += new Boid(bx.toInt, by.toInt, vx.toInt, vy.toInt, color(palette(j)) )
-        }
-        _b.foreach( b => physics.addParticle(b.mass) )
-        _b.toArray
-      }
-
-      def applyRules() = {
-        val r1factor = CM_FACTOR
-        val goalFactor = GOAL_FACTOR
-        val r2factor = AVOID_FACTOR
-        val r3factor = ALIGN_FACTOR
-        val temperature = BATH_FACTOR
-        //
-        // tabulate neighbors
-        //
-        boids.foreach( b => b.clearNeighbors() )
-
-        val DIST_BASED_NEIGHBORS = config.getBoolean("boids.distance_based_neighbors")
-
-        if ( DIST_BASED_NEIGHBORS ) {
-          for (i <- 0 until boids.length; j <- i + 1 until boids.length) {
-            val bi = boids(i)
-            val bj = boids(j)
-            if (bi.mass.distanceToSquared(bj.mass) < 45 * BIRD_SIZE * BIRD_SIZE) {
-              bi.addNeighbor(bj)
-              bj.addNeighbor(bi)
-            }
-          }
-        } else {
-          for( i <- 0 until boids.length ) {
-            val bi = boids(i)
-            for( j <- -30 to 30 ) {
-              val jj = ( j + boids.length ) % boids.length
-              bi.addNeighbor( boids(jj) )
-            }
-          }
-        }
-        //
-        // center of mass
-        //
-        boids.filter( _.neighbors.length>0 ).foreach( b => {
-          val cm = new Vec3D(0f,0f,0f)
-          b.neighbors.foreach( b => cm.add(b.mass) )
-          cm.scale( 1f/b.neighbors.length.toFloat )
-          val delta = cm.sub(b.mass).normalize.scale(r1factor)
-          b.mass.addVelocity(delta)
-        })
-        //
-        // goal
-        //
-        val goal = GOALS(currentGoal(id))
-        boids.foreach( b => {
-          val delta = goal.copy.sub(b.mass).normalize.scale(goalFactor)
-          b.mass.addVelocity(delta)
-        })
-        //
-        // avoidance
-        //
-        boids.filter( _.neighbors.length>0 ).foreach( bi => {
-          bi.neighbors.foreach(bj => {
-            if (bi.mass.distanceToSquared(bj.mass) < AVOID_SQ * BIRD_SIZE * BIRD_SIZE) {
-              val bij = bj.mass.copy.sub(bi.mass).normalize
-              bi.mass.addVelocity(bij.scale(-r2factor))
-            }
-          })
-        })
-        //
-        // bounding box
-        //
-        val lx0 = new Vec3D(-BOUNDING_BOX_SIZE,-BOUNDING_BOX_SIZE,0)
-        val lx1 = new Vec3D(BOUNDING_BOX_SIZE,-BOUNDING_BOX_SIZE,0)
-        val lx2 = new Vec3D(BOUNDING_BOX_SIZE,BOUNDING_BOX_SIZE,0)
-        val lx3 = new Vec3D(-BOUNDING_BOX_SIZE,BOUNDING_BOX_SIZE,0)
-        boids.foreach( b => {
-          b.avoidLine( lx0, lx1, 9*BIRD_SIZE*BIRD_SIZE, WALL_FACTOR )
-          b.avoidLine( lx1, lx2, 9*BIRD_SIZE*BIRD_SIZE, WALL_FACTOR )
-          b.avoidLine( lx2, lx3, 9*BIRD_SIZE*BIRD_SIZE, WALL_FACTOR )
-          b.avoidLine( lx3, lx0, 9*BIRD_SIZE*BIRD_SIZE, WALL_FACTOR )
-        })
-        //
-        // obstacle
-        //
-        val ly0 = new Vec3D(60,190,0)
-        val ly1 = new Vec3D(60,-190,0)
-        val ly2 = new Vec3D(-40,-190,0)
-        val ly3 = new Vec3D(-40,190,0)
-        boids.foreach( b => {
-          b.avoidLine(ly0, ly1, 4*BIRD_SIZE * BIRD_SIZE, WALL_FACTOR )
-          b.avoidLine(ly2, ly3, 4*BIRD_SIZE * BIRD_SIZE, WALL_FACTOR )
-        })
-        //
-        // alignment
-        //
-        boids.filter( _.neighbors.length>0 ).foreach( b => {
-          val cv = new Vec3D(0f,0f,0f)
-          b.neighbors.foreach( b => cv.add(b.mass.getVelocity) )
-          val deltav = cv.scale(1f/b.neighbors.length.toFloat).sub(b.mass.getVelocity).normalize
-          b.mass.addVelocity( deltav.scale(r3factor) )
-        })
-
-        //
-        // RESCALE
-        //
-        boids.foreach( b => {
-          val vf = b.mass.getVelocity.magnitude
-          b.mass.scaleVelocity( 1.0f/vf )
-        })
-
-        //
-        // bath fluctuations
-        //
-        boids.foreach( b => {
-          val vx = randomGaussian() * temperature
-          val vy = randomGaussian() * temperature
-          b.mass.addVelocity(new Vec3D(vx, vy, 0f))
-        })
-      }
-
-      def draw() = boids.foreach( _.draw )
-    }
-
-    def applyRules():Unit = groups.foreach( _.applyRules() )
+    def applyRules():Unit = groups.foreach( _.applyRules(goals) )
 
     /**
       * Agents are objects in the system which care about the external environment surrounding the music
@@ -236,8 +105,10 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
       */
     override def processEnvironment(time: Float, signals: Map[String, Array[Float]], events: Map[String, VideoEvent]): Unit = {
       val ti = (time/2f).toInt % 12
+      goals.foreach( _.clearBehaviors )
       for( i<-0 until NUM_GROUPS ) {
-        currentGoal(i) = ( ti + 3 * i ) % 12
+        val currentGoal = ( ti + 3 * i ) % 12
+        goals(currentGoal).weakActivate(i)
       }
 
       /*val mfcc = signals("mfcc").slice(2,13)
@@ -261,14 +132,148 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
       rect(-50,-200,20,400)
       rect(50,-200,20,400)
 
-      //fill(color(220,180,255),200f)
-      //val goal = GOALS(currentGoal)
-      //ellipse(goal.x-50,goal.y-50,100,100)
-
       popMatrix()
     }
 
     def cull():Unit = {}
+  }
+
+  class BoidsGroup(id:Int) {
+    private val boids:Array[Boid] = {
+      val _b = new ArrayBuffer[Boid]()
+      val nPalette = if (COLOR_BY_GROUP) NUM_GROUPS else NUM_BOIDS
+      val palette = Color.hsvSeries(Seq(PALETTE_MINH,PALETTE_MAXH,PALETTE_MINS,
+        PALETTE_MAXS,PALETTE_MINV,PALETTE_MAXV),nPalette).map( c => color(c._1,c._2,c._3) )
+
+      for( i <-0 until NUM_BOIDS ) {
+        val (bx, by) = (random(START_MINX,START_MAXX), random(START_MINY,START_MAXY))
+        val (vx, vy) = (random(START_MINVX,START_MAXVX), random(START_MINVX,START_MAXVX))
+        val j = if (COLOR_BY_GROUP) id else i
+        _b += new Boid(bx.toInt, by.toInt, vx.toInt, vy.toInt, color(palette(j)) )
+      }
+      _b.foreach( b => physics.addParticle(b.mass) )
+      _b.toArray
+    }
+
+    def applyRules( goals:Seq[BoidGoal] ) = {
+      val r1factor = CM_FACTOR
+      val goalFactor = GOAL_FACTOR
+      val r2factor = AVOID_FACTOR
+      val r3factor = ALIGN_FACTOR
+      val temperature = BATH_FACTOR
+      //
+      // tabulate neighbors
+      //
+      boids.foreach( b => b.clearNeighbors() )
+
+      val DIST_BASED_NEIGHBORS = config.getBoolean("boids.distance_based_neighbors")
+
+      if ( DIST_BASED_NEIGHBORS ) {
+        for (i <- 0 until boids.length; j <- i + 1 until boids.length) {
+          val bi = boids(i)
+          val bj = boids(j)
+          if (bi.mass.distanceToSquared(bj.mass) < 45 * BIRD_SIZE * BIRD_SIZE) {
+            bi.addNeighbor(bj)
+            bj.addNeighbor(bi)
+          }
+        }
+      } else {
+        for( i <- 0 until boids.length ) {
+          val bi = boids(i)
+          for( j <- -30 to 30 ) {
+            val jj = ( j + boids.length ) % boids.length
+            bi.addNeighbor( boids(jj) )
+          }
+        }
+      }
+      //
+      // center of mass
+      //
+      boids.filter( _.neighbors.length>0 ).foreach( b => {
+        val cm = new Vec3D(0f,0f,0f)
+        b.neighbors.foreach( b => cm.add(b.mass) )
+        cm.scale( 1f/b.neighbors.length.toFloat )
+        val delta = cm.sub(b.mass).normalize.scale(r1factor)
+        b.mass.addVelocity(delta)
+      })
+      //
+      // goals
+      //
+      for( goal <- goals ) {
+        val sign = goal.behaviorForGroup(id) match {
+          case BoidGoal.ATTRACT => 1.0
+          case BoidGoal.REPULSE => -1.0
+          case BoidGoal.IGNORE => 0.0
+        }
+        if (sign!=0.0) {
+          boids.foreach( b => {
+            val delta = goal.mass.copy.sub(b.mass).normalize.scale(sign.toFloat*goalFactor)
+            b.mass.addVelocity(delta)
+          })
+        }
+      }
+      //
+      // avoidance
+      //
+      boids.filter( _.neighbors.length>0 ).foreach( bi => {
+        bi.neighbors.foreach(bj => {
+          if (bi.mass.distanceToSquared(bj.mass) < AVOID_SQ * BIRD_SIZE * BIRD_SIZE) {
+            val bij = bj.mass.copy.sub(bi.mass).normalize
+            bi.mass.addVelocity(bij.scale(-r2factor))
+          }
+        })
+      })
+      //
+      // bounding box
+      //
+      val lx0 = new Vec3D(-BOUNDING_BOX_SIZE,-BOUNDING_BOX_SIZE,0)
+      val lx1 = new Vec3D(BOUNDING_BOX_SIZE,-BOUNDING_BOX_SIZE,0)
+      val lx2 = new Vec3D(BOUNDING_BOX_SIZE,BOUNDING_BOX_SIZE,0)
+      val lx3 = new Vec3D(-BOUNDING_BOX_SIZE,BOUNDING_BOX_SIZE,0)
+      boids.foreach( b => {
+        b.avoidLine( lx0, lx1, 9*BIRD_SIZE*BIRD_SIZE, WALL_FACTOR )
+        b.avoidLine( lx1, lx2, 9*BIRD_SIZE*BIRD_SIZE, WALL_FACTOR )
+        b.avoidLine( lx2, lx3, 9*BIRD_SIZE*BIRD_SIZE, WALL_FACTOR )
+        b.avoidLine( lx3, lx0, 9*BIRD_SIZE*BIRD_SIZE, WALL_FACTOR )
+      })
+      //
+      // obstacle
+      //
+      val ly0 = new Vec3D(60,190,0)
+      val ly1 = new Vec3D(60,-190,0)
+      val ly2 = new Vec3D(-40,-190,0)
+      val ly3 = new Vec3D(-40,190,0)
+      boids.foreach( b => {
+        b.avoidLine(ly0, ly1, 4*BIRD_SIZE * BIRD_SIZE, WALL_FACTOR )
+        b.avoidLine(ly2, ly3, 4*BIRD_SIZE * BIRD_SIZE, WALL_FACTOR )
+      })
+      //
+      // alignment
+      //
+      boids.filter( _.neighbors.length>0 ).foreach( b => {
+        val cv = new Vec3D(0f,0f,0f)
+        b.neighbors.foreach( b => cv.add(b.mass.getVelocity) )
+        val deltav = cv.scale(1f/b.neighbors.length.toFloat).sub(b.mass.getVelocity).normalize
+        b.mass.addVelocity( deltav.scale(r3factor) )
+      })
+      //
+      // RESCALE
+      //
+      boids.foreach( b => {
+        val vf = b.mass.getVelocity.magnitude
+        b.mass.scaleVelocity( 1.0f/vf )
+      })
+      //
+      // bath fluctuations
+      //
+      boids.foreach( b => {
+        val vx = randomGaussian() * temperature
+        val vy = randomGaussian() * temperature
+        b.mass.addVelocity(new Vec3D(vx, vy, 0f))
+      })
+    }
+
+    def draw() = boids.foreach( _.draw )
   }
 
   class Boid(x:Int,y:Int,vx:Int,vy:Int,_color:Int) {
@@ -328,5 +333,46 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
       }
     }
 
+  }
+
+  object BoidGoal {
+    val ATTRACT = 0
+    val IGNORE = 1
+    val REPULSE = 2
+  }
+
+  class BoidGoal( x:Int, y:Int, vx:Int, vy:Int, numGroups:Int, isMobile:Boolean ) {
+    class BoidGoalMass(loc:Vec3D) extends VerletParticle(loc)
+
+    val mass = {
+      val _m = new BoidGoalMass(new Vec3D(x,y,0f))
+      if (isMobile) {
+        _m.addVelocity(new Vec3D(vx, vy, 0f))
+        _m.addBehavior(new AttractionBehavior(new Vec3D(0f, 0f, 0f), 1600, 0.2f))
+      }
+      _m
+    }
+
+    val behaviorForGroup = {
+      val _b = Array.fill(numGroups)(BoidGoal.IGNORE)
+      _b(0) = BoidGoal.ATTRACT
+      _b
+    }
+
+    private def setAllBehaviors(behavior:Int) = (0 until behaviorForGroup.length).foreach( i => behaviorForGroup(i)=behavior )
+    def clearBehaviors():Unit = setAllBehaviors(BoidGoal.IGNORE)
+    def weakActivate(groupId:Int) = {
+      behaviorForGroup(groupId)=BoidGoal.ATTRACT
+    }
+    def strongActivate(groupId:Int) = {
+      setAllBehaviors(BoidGoal.REPULSE)
+      behaviorForGroup(groupId) = BoidGoal.ATTRACT
+    }
+
+    def draw(): Unit = {
+      fill( color(200f), 150f )
+      noStroke()
+      ellipse( this.mass.x, this.mass.y, 20, 20 )
+    }
   }
 }

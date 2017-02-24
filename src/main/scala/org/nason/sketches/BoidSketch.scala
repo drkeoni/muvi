@@ -3,7 +3,9 @@ package org.nason.sketches
 import ddf.minim.{AudioPlayer, Minim}
 import org.nason.model.{Agent, MusicVideoApplet, MusicVideoSystem, VideoEvent}
 import org.nason.util.Color
-import processing.core.PApplet
+import processing.core.{PApplet, PGraphics}
+import processing.core.PConstants.P3D
+import processing.opengl.{PGraphics3D, PShader}
 import toxi.geom.Vec3D
 import toxi.physics.behaviors.AttractionBehavior
 import toxi.physics.{VerletParticle, VerletPhysics}
@@ -23,6 +25,7 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
 
   var physics: VerletPhysics = null
   var boids: BoidsManager = null
+  var waterShader: PShader = null
 
   val SONG_FILE:String = songFiles(config.getString("song.name"))
   val BG_COLOR:Int = color(confFloat("sketch.background.r"),confFloat("sketch.background.g"),confFloat("sketch.background.b"))
@@ -58,6 +61,14 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
   val OBSTACLE_COLOR = color(confFloat("boids.obstacle_color.r"),confFloat("boids.obstacle_color.g"),confFloat("boids.obstacle_color.b"))
   val AVOID_SQ = config.getInt("boids.avoid_sq")
 
+  val DRAW_GOALS = config.getBoolean("boids.goals.draw")
+  val GOAL_IS_MOBILE = config.getBoolean("boids.goals.is_mobile")
+  val GOAL_WEIGHT = confFloat("boids.goals.weight")
+
+
+  var canvas: PGraphics = null
+  var first:Boolean = true
+
   override def setup():Unit = {
     physics = new VerletPhysics()
 
@@ -69,23 +80,48 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
     environment = new MusicVideoSystem(song)
     boids = new BoidsManager(physics)
     environment.register(boids)
+
+    waterShader = loadShader(glsl("water_surface.glsl"),glsl("water_vert.glsl"))
+    waterShader.set("iResolution",Array(width,height,0))
+
+    canvas = createGraphics(width,height,P3D)
   }
 
   override def draw():Unit = {
+    waterShader.set("iGlobalTime",millis()/1000f)
+    if (first) {
+      canvas.beginDraw()
+      canvas.background(BG_COLOR)
+      canvas.shader(waterShader)
+      canvas.endDraw()
+      first = false
+    }
     physics.update()
     environment.update(millis() / 1000.0f)
-    background(BG_COLOR)
+    canvas.beginDraw()
+    canvas.fill(color(100,100,255))
+    canvas.rect(0,0,width,height)
+    //canvas.filter(waterShader)
+    canvas.endDraw()
+    image(canvas,0,0,width,height)
     boids.applyRules()
     boids.draw()
     boids.cull()
   }
 
+  /**
+    * Overall management of the Boids system
+    * @param physics
+    */
   class BoidsManager(physics:VerletPhysics) extends Agent {
 
     val goals = (0 until 12).map( i => {
       val th = Math.PI * 2.0 * i / 12.0
       val center = new Vec3D((1000.0*Math.cos(th)).toFloat,(600.0*Math.sin(th)).toFloat,0f)
-      new BoidGoal( center.x.toInt, center.y.toInt, 0, 0, NUM_GROUPS, false )
+      val _g = new BoidGoal( center.x.toInt, center.y.toInt, 0, 0, NUM_GROUPS, GOAL_IS_MOBILE )
+      if ( GOAL_IS_MOBILE )
+        physics.addParticle(_g.mass)
+      _g
     })
 
     val groups = (0 until NUM_GROUPS).map( i => new BoidsGroup(i) )
@@ -123,7 +159,13 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
     def draw():Unit = {
       pushMatrix()
       translate(width/2,height/2)
+      //
+      // draw boids
+      //
       groups.foreach( _.draw )
+      //
+      // draw obstacles
+      //
       //fill(color(220,180,30),200f)
       fill(OBSTACLE_COLOR,200f)
       noStroke()
@@ -131,13 +173,25 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
       //rect(-10,-200,20,400)
       rect(-50,-200,20,400)
       rect(50,-200,20,400)
-
+      //
+      // draw goals
+      //
+      if (DRAW_GOALS) {
+        goals.foreach( _.draw )
+      }
+      //
+      // back to where we started
+      //
       popMatrix()
     }
 
     def cull():Unit = {}
   }
 
+  /**
+    * A flock of boids
+    * @param id
+    */
   class BoidsGroup(id:Int) {
     private val boids:Array[Boid] = {
       val _b = new ArrayBuffer[Boid]()
@@ -276,6 +330,15 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
     def draw() = boids.foreach( _.draw )
   }
 
+  /**
+    * A boid.  An object which participates in flocks and draws itself
+    * like a flockable object (like a fish).
+    * @param x
+    * @param y
+    * @param vx
+    * @param vy
+    * @param _color
+    */
   class Boid(x:Int,y:Int,vx:Int,vy:Int,_color:Int) {
     class BoidMass(loc:Vec3D) extends VerletParticle(loc)
 
@@ -286,13 +349,13 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
     }
 
     def draw() = {
-      fill(_color,200f)
       val v = mass.getVelocity.copy.normalize
       val (x0,y0) = (mass.x+BIRD_SIZE*v.x,mass.y+BIRD_SIZE*v.y)
       val (x3,y3) = (mass.x-0.5*BIRD_SIZE*v.x,mass.y-0.5*BIRD_SIZE*v.y)
       val (x1,y1) = (x3-0.5*BIRD_SIZE*v.y,y3+0.5*BIRD_SIZE*v.x)
       val (x2,y2) = (x3+0.5*BIRD_SIZE*v.y,y3-0.5*BIRD_SIZE*v.x)
       val (x4,y4) = (mass.x-3*BIRD_SIZE*v.x,mass.y-3*BIRD_SIZE*v.y)
+      fill(_color,200f)
       noStroke()
       triangle(x0.toInt,y0.toInt,x2.toInt,y2.toInt,x1.toInt,y1.toInt)
       triangle(x4.toInt,y4.toInt,x2.toInt,y2.toInt,x1.toInt,y1.toInt)
@@ -341,12 +404,22 @@ class BoidSketch() extends MusicVideoApplet(Some("boids/sketch.conf")) {
     val REPULSE = 2
   }
 
+  /**
+    * A goal for a flock of boids.  Can be an attractive or repulsive goal.
+    * @param x
+    * @param y
+    * @param vx
+    * @param vy
+    * @param numGroups
+    * @param isMobile
+    */
   class BoidGoal( x:Int, y:Int, vx:Int, vy:Int, numGroups:Int, isMobile:Boolean ) {
     class BoidGoalMass(loc:Vec3D) extends VerletParticle(loc)
 
     val mass = {
       val _m = new BoidGoalMass(new Vec3D(x,y,0f))
       if (isMobile) {
+        _m.setWeight( GOAL_WEIGHT )
         _m.addVelocity(new Vec3D(vx, vy, 0f))
         _m.addBehavior(new AttractionBehavior(new Vec3D(0f, 0f, 0f), 1600, 0.2f))
       }

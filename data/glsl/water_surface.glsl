@@ -12,6 +12,8 @@ varying vec4 vertTexCoord;
 
 uniform float     iGlobalTime;           // shader playback time (in seconds)
 
+float discreteColor = 300.0;
+
 /*
    Original GLSL code is here: https://www.shadertoy.com/view/MdlXz8
 
@@ -38,7 +40,7 @@ void main()
 	}
 	c /= float(MAX_ITER);
 	c = 1.17-pow(c, 1.4);
-	vec3 colour = vec3(pow(abs(c), 10.0));
+	vec3 colour = floor((0.2 * vec3(pow(abs(c), 10.0)))*discreteColor)/discreteColor;
     colour = clamp(colour + vec3(0.3, 0.55, 0.7), 0.0, 0.8);
 
 	gl_FragColor = vec4(colour, 1.0);

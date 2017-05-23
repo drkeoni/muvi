@@ -28,7 +28,7 @@ void main()
     vec2 uv = vertTexCoord.xy;
 
     vec2 p = mod(uv*PERIOD, PERIOD)-200.0;
-	vec2 i = vec2(p);
+    vec2 i = vec2(p);
 	float c = 1.0;
 	float inten = .005;
 

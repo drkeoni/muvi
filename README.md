@@ -13,8 +13,6 @@ JVM language.
 
 ![screenshot of Lindenmayer](/data/images/lindenmayer_example_01_medium.png)
 
-### SnowFall
-
 ### VinylSketch2
 
 ![screenshot of VinylSketch2](/data/images/vinyl_example_05.png)
@@ -46,6 +44,26 @@ folder.
 
 A live example of this sketch with accompanying music can be found [here](https://youtu.be/TB2K7XTwpBE)
 or [here.](https://www.youtube.com/watch?v=zlwOMv0-NEE)
+
+### BoidsSketch
+
+![screenshot of BoidSketch](/data/images/boids_example.png)
+
+Boids are an artificial life simulation of flocking behavior originally
+developed by [Craig Reynolds.](https://en.wikipedia.org/wiki/Boids)
+
+In this sketch I modeled the boids to look like fish.  The differently colored fish like to
+flock together and circulate around the image.  The flow of the fish is controlled by
+attraction to a gravitational attractor that is circulating around the image.  The fish
+are set to avoid the two walls in the middle of the image; this creates some more interesting
+patterns of flocking behavior while avoiding obstructions.  The waves are dynamically rippling
+using a GLSL shader that I heavily customized for my desired uses.
+
+I like to combine this sketch with a musical recording that
+I named ["Water Washing Over Towers".](https://soundcloud.com/jon-sorenson/water-washing-over-towers)
+There are nice ambient sounds of waves and beaches in this recording, it pairs nicely with
+the aquatic theme of the sketch.
+
 
 ## Architecture
 
